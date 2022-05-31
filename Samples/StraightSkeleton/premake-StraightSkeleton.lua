@@ -1,3 +1,5 @@
+-- Be sure to define the path to the vcpkg package directory as vcpkgPackageDir
+
 project "StraightSkeleton"
   location ""
   kind "SharedLib"
@@ -16,63 +18,63 @@ project "StraightSkeleton"
     
   includedirs
   {
-    "%{wks.location}/../vcpkg/packages/boost-utility_x64-windows/include",
-    "%{wks.location}/../vcpkg/packages/boost-foreach_x64-windows/include",
-    "%{wks.location}/../vcpkg/packages/boost-array_x64-windows/include",
-    "%{wks.location}/../vcpkg/packages/boost-throw-exception_x64-windows/include",
-    "%{wks.location}/../vcpkg/packages/boost-range_x64-windows/include",
-    "%{wks.location}/../vcpkg/packages/cgal_x64-windows/include",
-    "%{wks.location}/../vcpkg/packages/boost-optional_x64-windows/include",
-    "%{wks.location}/../vcpkg/packages/boost-tuple_x64-windows/include",
-    "%{wks.location}/../vcpkg/packages/boost-numeric-conversion_x64-windows/include",
-    "%{wks.location}/../vcpkg/packages/boost-core_x64-windows/include",
-    "%{wks.location}/../vcpkg/packages/boost-random_x64-windows/include",
-    "%{wks.location}/../vcpkg/packages/boost-property-map_x64-windows/include",
-    "%{wks.location}/../vcpkg/packages/boost-lexical-cast_x64-windows/include",
-    "%{wks.location}/../vcpkg/packages/boost-any_x64-windows/include",
-    "%{wks.location}/../vcpkg/packages/boost-integer_x64-windows/include",
-    "%{wks.location}/../vcpkg/packages/boost-io_x64-windows/include",
-    "%{wks.location}/../vcpkg/packages/boost-math_x64-windows/include",
-    "%{wks.location}/../vcpkg/packages/boost-preprocessor_x64-windows/include",
-    "%{wks.location}/../vcpkg/packages/boost-assert_x64-windows/include",
-    "%{wks.location}/../vcpkg/packages/boost-multiprecision_x64-windows/include",
-    "%{wks.location}/../vcpkg/packages/boost-predef_x64-windows/include",
-    "%{wks.location}/../vcpkg/packages/boost-iterator_x64-windows/include",
-    "%{wks.location}/../vcpkg/packages/boost-type-index_x64-windows/include",
-    "%{wks.location}/../vcpkg/packages/boost-container_x64-windows/include",
-    "%{wks.location}/../vcpkg/packages/gmp_x64-windows/include",
-    "%{wks.location}/../vcpkg/packages/boost-graph_x64-windows/include",
-    "%{wks.location}/../vcpkg/packages/boost-move_x64-windows/include",
-    "%{wks.location}/../vcpkg/packages/boost-unordered_x64-windows/include",
-    "%{wks.location}/../vcpkg/packages/boost-container-hash_x64-windows/include",
-    "%{wks.location}/../vcpkg/packages/boost-variant_x64-windows/include",
-    "%{wks.location}/../vcpkg/packages/boost-algorithm_x64-windows/include",
-    "%{wks.location}/../vcpkg/packages/boost-concept-check_x64-windows/include",
-    "%{wks.location}/../vcpkg/packages/boost-smart-ptr_x64-windows/include",
-    "%{wks.location}/../vcpkg/packages/boost-config_x64-windows/include",
-    "%{wks.location}/../vcpkg/packages/boost-mpl_x64-windows/include",
-    "%{wks.location}/../vcpkg/packages/boost-type-traits_x64-windows/include",
-    "%{wks.location}/../vcpkg/packages/mpfr_x64-windows/include",
-    "%{wks.location}/../vcpkg/packages/boost-static-assert_x64-windows/include",
-    "%{wks.location}/../vcpkg/packages/boost-detail_x64-windows/include",
+    vcpkgPackageDir .. "/boost-utility_x64-windows/include",
+    vcpkgPackageDir .. "/boost-foreach_x64-windows/include",
+    vcpkgPackageDir .. "/boost-array_x64-windows/include",
+    vcpkgPackageDir .. "/boost-throw-exception_x64-windows/include",
+    vcpkgPackageDir .. "/boost-range_x64-windows/include",
+    vcpkgPackageDir .. "/cgal_x64-windows/include",
+    vcpkgPackageDir .. "/boost-optional_x64-windows/include",
+    vcpkgPackageDir .. "/boost-tuple_x64-windows/include",
+    vcpkgPackageDir .. "/boost-numeric-conversion_x64-windows/include",
+    vcpkgPackageDir .. "/boost-core_x64-windows/include",
+    vcpkgPackageDir .. "/boost-random_x64-windows/include",
+    vcpkgPackageDir .. "/boost-property-map_x64-windows/include",
+    vcpkgPackageDir .. "/boost-lexical-cast_x64-windows/include",
+    vcpkgPackageDir .. "/boost-any_x64-windows/include",
+    vcpkgPackageDir .. "/boost-integer_x64-windows/include",
+    vcpkgPackageDir .. "/boost-io_x64-windows/include",
+    vcpkgPackageDir .. "/boost-math_x64-windows/include",
+    vcpkgPackageDir .. "/boost-preprocessor_x64-windows/include",
+    vcpkgPackageDir .. "/boost-assert_x64-windows/include",
+    vcpkgPackageDir .. "/boost-multiprecision_x64-windows/include",
+    vcpkgPackageDir .. "/boost-predef_x64-windows/include",
+    vcpkgPackageDir .. "/boost-iterator_x64-windows/include",
+    vcpkgPackageDir .. "/boost-type-index_x64-windows/include",
+    vcpkgPackageDir .. "/boost-container_x64-windows/include",
+    vcpkgPackageDir .. "/gmp_x64-windows/include",
+    vcpkgPackageDir .. "/boost-graph_x64-windows/include",
+    vcpkgPackageDir .. "/boost-move_x64-windows/include",
+    vcpkgPackageDir .. "/boost-unordered_x64-windows/include",
+    vcpkgPackageDir .. "/boost-container-hash_x64-windows/include",
+    vcpkgPackageDir .. "/boost-variant_x64-windows/include",
+    vcpkgPackageDir .. "/boost-algorithm_x64-windows/include",
+    vcpkgPackageDir .. "/boost-concept-check_x64-windows/include",
+    vcpkgPackageDir .. "/boost-smart-ptr_x64-windows/include",
+    vcpkgPackageDir .. "/boost-config_x64-windows/include",
+    vcpkgPackageDir .. "/boost-mpl_x64-windows/include",
+    vcpkgPackageDir .. "/boost-type-traits_x64-windows/include",
+    vcpkgPackageDir .. "/mpfr_x64-windows/include",
+    vcpkgPackageDir .. "/boost-static-assert_x64-windows/include",
+    vcpkgPackageDir .. "/boost-detail_x64-windows/include",
     "src",
-    "%{wks.location}/AdventuresIn2D/3rdParty/Core2DApp/src",
-    "%{wks.location}/AdventuresIn2D/3rdParty/Core2DApp/3rdParty/DgLib/src"
+    "%{wks.location}/XornCore/src",
+    "%{wks.location}/DgLib/src"
   }
   
   links
   {
-    "%{wks.location}/../vcpkg/packages/gmp_x64-windows/lib/gmp.lib",
-    "%{wks.location}/../vcpkg/packages/mpfr_x64-windows/lib/mpfr.lib",
+    vcpkgPackageDir .. "/gmp_x64-windows/lib/gmp.lib",
+    vcpkgPackageDir .. "/mpfr_x64-windows/lib/mpfr.lib",
     "DgLib",
-	"Core2DLib"
+	"XornCOre"
   }
   
   postbuildcommands 
   {
-    "{COPY} %{wks.location}/build/%{prj.name}-%{cfg.buildcfg}/StraightSkeleton.dll %{wks.location}/AdventuresIn2D/Plugins/StraightSkeleton",
-    "{COPY} %{wks.location}/../vcpkg/packages/gmp_x64-windows/bin/gmp-10.dll %{wks.location}/AdventuresIn2D/Plugins/StraightSkeleton",
-    "{COPY} %{wks.location}/../vcpkg/packages/mpfr_x64-windows/bin/mpfr-6.dll %{wks.location}/AdventuresIn2D/Plugins/StraightSkeleton"
+    "{COPY} %{wks.location}/build/%{prj.name}-%{cfg.buildcfg}/StraightSkeleton.dll %{wks.location}/XornApp/Plugins/StraightSkeleton",
+    "{COPY} " .. vcpkgPackageDir .. "/gmp_x64-windows/bin/gmp-10.dll %{wks.location}/XornApp/Plugins/StraightSkeleton",
+    "{COPY} " .. vcpkgPackageDir .. "/mpfr_x64-windows/bin/mpfr-6.dll %{wks.location}/XornApp/Plugins/StraightSkeleton"
   }
 
   filter "configurations:Debug"

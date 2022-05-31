@@ -1,0 +1,9 @@
+[submodule "DgLib"]
+	path = DgLib
+	url = git@github.com:int-Frank/DgLib.git
+[submodule "XornCore"]
+	path = XornCore
+	url = git@github.com:int-Frank/XornCore.git
+[submodule "XornApp"]
+	path = XornApp
+	url = git@github.com:int-Frank/XornApp.git

@@ -3,23 +3,29 @@
 
 #include <vector>
 
-#include "a2dModule.h"
-#include "a2dCommon.h"
-#include "a2dRenderer.h"
-#include "a2dLineProperties.h"
+#include "xnModule.h"
+#include "xnCommon.h"
+#include "xnRenderer.h"
+#include "xnLineProperties.h"
 #include "DgSet_AVL.h"
 
-class Triangulation : public a2d::Module
+namespace xn
+{
+  class Logger;
+  class Renderer;
+};
+
+class Triangulation : public xn::Module
 {
 public:
 
-  Triangulation(bool *pShow, a2d::Logger *pLogger);
+  Triangulation(bool *pShow, xn::Logger *pLogger);
 
-  void Render(a2d::Renderer *pRenderer, a2d::mat33 const &T_World_View) override;
+  void Render(xn::Renderer *pRenderer, xn::mat33 const &T_World_View) override;
   void Clear();
 
-  bool SetGeometry(a2d::Geometry const &) override;
-  void DoFrame(a2d::UIContext *) override;
+  bool SetGeometry(xn::PolygonGroup const &) override;
+  void DoFrame(xn::UIContext *) override;
 
 private:
 
@@ -30,27 +36,27 @@ private:
   public:
 
     UniqueEdge() {}
-    UniqueEdge(a2d::vec2 const &a, a2d::vec2 const &b);
-    static bool VecLess(a2d::vec2 const &a, a2d::vec2 const &b);
+    UniqueEdge(xn::vec2 const &a, xn::vec2 const &b);
+    static bool VecLess(xn::vec2 const &a, xn::vec2 const &b);
     bool operator<(UniqueEdge const &a) const;
 
-    a2d::vec2 p0;
-    a2d::vec2 p1;
+    xn::vec2 p0;
+    xn::vec2 p1;
   };
 
   void SetValueBounds();
 
-  a2d::Geometry m_geometry;
+  xn::PolygonGroup m_geometry;
   Dg::Set_AVL<UniqueEdge> m_edgeSet;
   size_t m_vertCount;
   size_t m_faceCount;
 
-  a2d::vec2 m_sizeCriteriaBounds;
+  xn::vec2 m_sizeCriteriaBounds;
   float m_sizeCriteria;
   float m_shapeCriteria;
   int m_LloydIterations;
 
-  a2d::LineProperties m_edgeProperties;
+  xn::LineProperties m_edgeProperties;
 };
 
 #endif

@@ -1,4 +1,4 @@
-workspace "AdventuresIn2DSamples"
+workspace "XornDemo"
   architecture "x64"
   
   configurations
@@ -7,7 +7,11 @@ workspace "AdventuresIn2DSamples"
     "Release"
   }
 
-  include("AdventuresIn2D/3rdParty/Core2DApp/premake-Core2DLib.lua")
-  include("AdventuresIn2D/3rdParty/Core2DApp/3rdParty/DgLib/premake-proj-DgLib.lua")
-  include("AdventuresIn2D/premake-AdventuresIn2D.lua")
-  include("premake-Samples.lua")
+  vcpkgPackageDir = "%{wks.location}/../../vcpkg/packages"
+
+  include("XornCore/premake-XornCore.lua")
+  include("DgLib/premake-proj-DgLib.lua")
+  include("XornApp/premake-XornApp.lua")
+  group("Samples")
+	include("premake-Samples.lua")
+  group("")

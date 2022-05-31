@@ -11,10 +11,10 @@
 #include <CGAL/lloyd_optimize_mesh_2.h>
 
 #include "Triangulation.h"
-#include "a2dGeometricQueries.h"
-#include "a2dPlugin_API.h"
-#include "a2dVersion.h"
-#include "a2dLogger.h"
+#include "xnGeometricQueries.h"
+#include "xnPluginAPI.h"
+#include "xnVersion.h"
+#include "xnLogger.h"
 
 typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
 typedef CGAL::Delaunay_mesh_vertex_base_2<K>                Vb;
@@ -26,19 +26,19 @@ typedef CGAL::Delaunay_mesher_2<CDT, Criteria>              Mesher;
 typedef CDT::Vertex_handle Vertex_handle;
 typedef CDT::Point Point;
 
-using namespace a2d;
+using namespace xn;
 
 DEFINE_STANDARD_EXPORTS
 DEFINE_DLLMAIN
 
-Dg::ErrorCode ConvexPartition(DgPolygon const &, Geometry *pOut);
+Dg::ErrorCode ConvexPartition(DgPolygon const &, PolygonGroup *pOut);
 
-Module * a2dPlugin_CreateModule(bool *pShow, Logger *pLogger)
+Module * xnPlugin_CreateModule(bool *pShow, Logger *pLogger)
 {
   return new Triangulation(pShow, pLogger);
 }
 
-char const *a2dPlugin_GetModuleName()
+char const *xnPlugin_GetModuleName()
 {
   return "Triangulation";
 }
@@ -49,19 +49,19 @@ static vec2 ToDgVec(T const &p)
   return vec2((float)p.x(), (float)p.y());
 }
 
-static std::vector<Point> GenerateSeeds(Geometry const &geom)
+static std::vector<Point> GenerateSeeds(PolygonGroup const &geom)
 {
   std::vector<Point> result;
 
   for (size_t i = 1; i < geom.polygons.size(); i++)
   {
-    ::a2d::Polygon const &poly = geom.polygons[i];
-    Geometry partition;
+    ::xn::Polygon const &poly = geom.polygons[i];
+    PolygonGroup partition;
     ConvexPartition(poly, &partition);
     if (partition.polygons.size() == 0)
       continue;
 
-    ::a2d::Polygon const &subPoly = partition.polygons[0];
+    ::xn::Polygon const &subPoly = partition.polygons[0];
     vec2 centroid(0.f, 0.f);
     for (auto it = subPoly.cPointsBegin(); it != subPoly.cPointsEnd(); it++)
       centroid += *it;
@@ -162,7 +162,7 @@ void Triangulation::SetValueBounds()
     m_sizeCriteria = (m_sizeCriteriaBounds.x() + m_sizeCriteriaBounds.y()) / 2.f;
 }
 
-bool Triangulation::SetGeometry(Geometry const &geometry)
+bool Triangulation::SetGeometry(PolygonGroup const &geometry)
 {
   m_geometry = geometry;
   return Update();
@@ -223,9 +223,9 @@ bool Triangulation::Update()
   return true;
 }
 
-void Triangulation::DoFrame(a2d::UIContext *pContext)
+void Triangulation::DoFrame(UIContext *pContext)
 {
-  pContext->BeginWindow(a2dPlugin_GetModuleName(), m_pShow);
+  pContext->BeginWindow(xnPlugin_GetModuleName(), m_pShow);
 
   if (pContext->Button("What is this?##Triangulation"))
     pContext->OpenPopup("Description##Triangulation");

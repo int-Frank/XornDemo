@@ -3,9 +3,9 @@
 #include <CGAL/Partition_traits_2.h>
 #include <CGAL/property_map.h>
 
-#include "a2dGeometry.h"
+#include "xnGeometry.h"
 
-Dg::ErrorCode ConvexPartition(a2d::DgPolygon const &polygon, a2d::Geometry *pOut)
+Dg::ErrorCode ConvexPartition(xn::DgPolygon const &polygon, xn::PolygonGroup *pOut)
 {
   typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
   typedef CGAL::Partition_traits_2<K, CGAL::Pointer_property_map<K::Point_2>::type > Partition_traits_2;
@@ -13,7 +13,7 @@ Dg::ErrorCode ConvexPartition(a2d::DgPolygon const &polygon, a2d::Geometry *pOut
   typedef Partition_traits_2::Polygon_2                       Polygon_2;  // a polygon of indices
   typedef std::list<Polygon_2>                                Polygon_list;
 
-  a2d::DgPolygon ccwPolygon = polygon;
+  xn::DgPolygon ccwPolygon = polygon;
   ccwPolygon.SetWinding(Dg::Orientation::CCW);
 
   std::vector<K::Point_2> points;
@@ -35,11 +35,11 @@ Dg::ErrorCode ConvexPartition(a2d::DgPolygon const &polygon, a2d::Geometry *pOut
 
   for (const Polygon_2 &poly : partition_polys)
   {
-    a2d::Polygon outPoly;
+    xn::Polygon outPoly;
     for (Point_2 p : poly.container())
     {
       K::Point_2 point = points[p];
-      outPoly.PushBack(a2d::vec2((float)point.x(), (float)point.y()));
+      outPoly.PushBack(xn::vec2((float)point.x(), (float)point.y()));
     }
     pOut->polygons.push_back(outPoly);
   }

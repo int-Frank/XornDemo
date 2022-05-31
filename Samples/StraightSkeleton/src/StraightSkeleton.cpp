@@ -7,10 +7,10 @@
 #include <boost/shared_ptr.hpp>
 
 #include "StraightSkeleton.h"
-#include "a2dGeometricQueries.h"
-#include "a2dPlugin_API.h"
-#include "a2dVersion.h"
-#include "a2dLogger.h"
+#include "xnGeometricQueries.h"
+#include "xnPluginAPI.h"
+#include "xnVersion.h"
+#include "xnLogger.h"
 
 typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
 typedef K::Point_2                    Point;
@@ -20,7 +20,7 @@ typedef CGAL::Straight_skeleton_2<K>  Ss;
 
 typedef boost::shared_ptr<Ss> SsPtr;
 
-using namespace a2d;
+using namespace xn;
 
 DEFINE_STANDARD_EXPORTS
 DEFINE_DLLMAIN
@@ -30,12 +30,12 @@ vec2 ToDgVec(Point const &p)
   return vec2((float)p.x(), (float)p.y());
 }
 
-Module *a2dPlugin_CreateModule(bool *pShow, Logger *pLogger)
+Module *xnPlugin_CreateModule(bool *pShow, Logger *pLogger)
 {
   return new StraightSkeleton(pShow, pLogger);
 }
 
-char const *a2dPlugin_GetModuleName()
+char const *xnPlugin_GetModuleName()
 {
   return "Straight Skeleton";
 }
@@ -61,7 +61,7 @@ void StraightSkeleton::Clear()
   m_faceCount = 0;
 }
 
-bool StraightSkeleton::SetGeometry(Geometry const &geometry)
+bool StraightSkeleton::SetGeometry(PolygonGroup const &geometry)
 {
   Clear();
   if (geometry.polygons.size() == 0)
@@ -143,7 +143,7 @@ bool StraightSkeleton::SetGeometry(Geometry const &geometry)
 
 void StraightSkeleton::DoFrame(UIContext *pContext)
 {
-  pContext->BeginWindow(a2dPlugin_GetModuleName(), m_pShow);
+  pContext->BeginWindow(xnPlugin_GetModuleName(), m_pShow);
 
   if (pContext->Button("What is this?##StraightSkeleton"))
     pContext->OpenPopup("Description##StraightSkeleton");
