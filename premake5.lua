@@ -7,7 +7,7 @@ workspace "XornDemo"
     "Release"
   }
 
-  vcpkgPackageDir = "%{wks.location}/../../vcpkg/packages"
+  vcpkgPackageDir = "%{wks.location}/../vcpkg/packages"
 
   include("XornCore/premake-XornCore.lua")
   include("DgLib/premake-proj-DgLib.lua")
