@@ -26,9 +26,10 @@ public:
   void Clear();
 
   bool SetGeometry(xn::PolygonGroup const &) override;
-  void DoFrame(xn::UIContext *) override;
 
 private:
+
+  void _DoFrame(xn::UIContext *) override;
 
   xn::SegmentCollection m_segments;
   xn::SegmentCollection m_boundaryConnections;

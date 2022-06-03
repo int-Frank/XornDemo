@@ -223,10 +223,8 @@ bool Triangulation::Update()
   return true;
 }
 
-void Triangulation::DoFrame(UIContext *pContext)
+void Triangulation::_DoFrame(UIContext *pContext)
 {
-  pContext->BeginWindow(xnPlugin_GetModuleName(), m_pShow);
-
   if (pContext->Button("What is this?##Triangulation"))
     pContext->OpenPopup("Description##Triangulation");
   if (pContext->BeginPopup("Description##Triangulation"))
@@ -248,8 +246,6 @@ void Triangulation::DoFrame(UIContext *pContext)
 
   if (pContext->SliderInt("Lloyd iterations", &m_LloydIterations, 0, 50))
     Update();
-
-  pContext->EndWindow();
 }
 
 void Triangulation::Render(Renderer *pRenderer, mat33 const &T_World_View)

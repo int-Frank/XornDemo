@@ -141,10 +141,8 @@ bool StraightSkeleton::SetGeometry(PolygonGroup const &geometry)
   return true;
 }
 
-void StraightSkeleton::DoFrame(UIContext *pContext)
+void StraightSkeleton::_DoFrame(UIContext *pContext)
 {
-  pContext->BeginWindow(xnPlugin_GetModuleName(), m_pShow);
-
   if (pContext->Button("What is this?##StraightSkeleton"))
     pContext->OpenPopup("Description##StraightSkeleton");
   if (pContext->BeginPopup("Description##StraightSkeleton"))
@@ -159,8 +157,6 @@ void StraightSkeleton::DoFrame(UIContext *pContext)
   pContext->Text("Edges: %u", m_edgeCount);
   pContext->Text("Faces: %u", m_faceCount);
   pContext->Checkbox("Show boundary connections##StraightSkeleton", &m_showBoundaryConnections);
-
-  pContext->EndWindow();
 }
 
 void StraightSkeleton::Render(Renderer *pRenderer, mat33 const &T_World_View)

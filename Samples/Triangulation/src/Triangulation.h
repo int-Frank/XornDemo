@@ -25,10 +25,10 @@ public:
   void Clear();
 
   bool SetGeometry(xn::PolygonGroup const &) override;
-  void DoFrame(xn::UIContext *) override;
 
 private:
 
+  void _DoFrame(xn::UIContext *) override;
   bool Update();
 
   class UniqueEdge
