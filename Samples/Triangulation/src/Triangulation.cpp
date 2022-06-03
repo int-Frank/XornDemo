@@ -33,9 +33,9 @@ DEFINE_DLLMAIN
 
 Dg::ErrorCode ConvexPartition(DgPolygon const &, PolygonGroup *pOut);
 
-Module * xnPlugin_CreateModule(bool *pShow, Logger *pLogger)
+Module * xnPlugin_CreateModule(xn::ModuleInitData *pData)
 {
-  return new Triangulation(pShow, pLogger);
+  return new Triangulation(pData);
 }
 
 char const *xnPlugin_GetModuleName()
@@ -110,8 +110,8 @@ bool Triangulation::UniqueEdge::operator<(UniqueEdge const &a) const
   return false;
 }
 
-Triangulation::Triangulation(bool *pShow, Logger *pLogger)
-  : Module(pShow, pLogger)
+Triangulation::Triangulation(xn::ModuleInitData *pData)
+  : Module(pData)
   , m_edgeSet()
   , m_vertCount(0)
   , m_faceCount(0)

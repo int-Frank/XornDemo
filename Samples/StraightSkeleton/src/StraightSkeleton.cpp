@@ -30,9 +30,9 @@ vec2 ToDgVec(Point const &p)
   return vec2((float)p.x(), (float)p.y());
 }
 
-Module *xnPlugin_CreateModule(bool *pShow, Logger *pLogger)
+Module *xnPlugin_CreateModule(xn::ModuleInitData *pData)
 {
-  return new StraightSkeleton(pShow, pLogger);
+  return new StraightSkeleton(pData);
 }
 
 char const *xnPlugin_GetModuleName()
@@ -40,8 +40,8 @@ char const *xnPlugin_GetModuleName()
   return "Straight Skeleton";
 }
 
-StraightSkeleton::StraightSkeleton(bool *pShow, Logger *pLogger)
-  : Module(pShow, pLogger)
+StraightSkeleton::StraightSkeleton(xn::ModuleInitData *pData)
+  : Module(pData)
   , m_segments()
   , m_vertCount(0)
   , m_edgeCount(0)

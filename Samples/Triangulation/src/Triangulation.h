@@ -8,10 +8,10 @@
 #include "xnRenderer.h"
 #include "xnLineProperties.h"
 #include "DgSet_AVL.h"
+#include "xnModuleInitData.h"
 
 namespace xn
 {
-  class Logger;
   class Renderer;
 };
 
@@ -19,7 +19,7 @@ class Triangulation : public xn::Module
 {
 public:
 
-  Triangulation(bool *pShow, xn::Logger *pLogger);
+  Triangulation(xn::ModuleInitData *pData);
 
   void Render(xn::Renderer *pRenderer, xn::mat33 const &T_World_View) override;
   void Clear();

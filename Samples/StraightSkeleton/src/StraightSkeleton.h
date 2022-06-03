@@ -8,6 +8,7 @@
 #include "xnGeometry.h"
 #include "xnRenderer.h"
 #include "xnLineProperties.h"
+#include "xnModuleInitData.h"
 
 namespace xn
 {
@@ -19,7 +20,7 @@ class StraightSkeleton : public xn::Module
 {
 public:
 
-  StraightSkeleton(bool *pShow, xn::Logger *pLogger);
+  StraightSkeleton(xn::ModuleInitData *);
 
   void Render(xn::Renderer *pRenderer, xn::mat33 const &T_World_View) override;
   void Clear();
