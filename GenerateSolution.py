@@ -6,27 +6,36 @@ sys.path.insert(0, 'DgLib\\3rdParty\\BuildScripts')
 
 import DgBuild
 
-samplesDir = "Samples"
+def CreatePluginPremakeFile(rootDir, fileName):
+    folders = []
+    for file in os.listdir(rootDir):
+        d = os.path.join(rootDir, file)
+        if os.path.isdir(d):
+            folders.append(file)
 
-def CreateSamplesPremakeFile(path):
-    sampleNames = os.listdir(path)
+    with open(fileName, "w") as file:
+        for pluginName in folders:
+            file.write(f"include(\"{rootDir}/{pluginName}/premake-{pluginName}.lua\")\n")
 
-    with open("premake-Samples.lua", "w") as file:
-        for name in sampleNames:
-            file.write(f"include(\"Samples/{name}/premake-{name}.lua\")\n")
-
-def CreatePluginDirs(path):
+def CreatePluginDirs(rootDir):
     if not os.path.exists("XornApp/Plugins"):
         os.makedirs("XornApp/Plugins")
     
-    sampleNames = os.listdir(path)
-    for name in sampleNames:
+    folders = []
+    for file in os.listdir(rootDir):
+        d = os.path.join(rootDir, file)
+        if os.path.isdir(d):
+            folders.append(file)
+            
+    for name in folders:
         pluginPath = f"XornApp/Plugins/{name}"
         if not os.path.exists(pluginPath):
             os.makedirs(pluginPath)
 
-CreateSamplesPremakeFile(samplesDir)
-CreatePluginDirs(samplesDir)
+CreatePluginPremakeFile("Samples", "premake-Samples.lua")
+CreatePluginPremakeFile("XornPlugins", "premake-XornPlugins.lua")
+CreatePluginDirs("Samples")
+CreatePluginDirs("XornPlugins")
 
 DgBuild.Make_vpaths("DgLib/src/", "DgLib/DgLib_vpaths.lua")
 subprocess.call("DgLib/3rdParty/premake/premake5.exe vs2022")

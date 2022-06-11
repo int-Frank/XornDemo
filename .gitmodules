@@ -7,3 +7,6 @@
 [submodule "XornApp"]
 	path = XornApp
 	url = git@github.com:int-Frank/XornApp.git
+[submodule "XornPlugins"]
+	path = XornPlugins
+	url = git@github.com:int-Frank/XornPlugins.git

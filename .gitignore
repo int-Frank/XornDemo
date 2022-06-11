@@ -382,3 +382,4 @@ premake-Samples.lua
 *.vcxproj
 *.sln
 build/
+/premake-XornPlugins.lua
