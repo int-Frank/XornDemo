@@ -7,10 +7,11 @@
 #include <boost/shared_ptr.hpp>
 
 #include "StraightSkeleton.h"
-#include "xnGeometricQueries.h"
 #include "xnPluginAPI.h"
 #include "xnVersion.h"
 #include "xnLogger.h"
+#include <DgQuery.h>
+#include <DgQuerySegmentSegment.h>
 
 typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
 typedef K::Point_2                    Point;
@@ -28,6 +29,24 @@ DEFINE_DLLMAIN
 vec2 ToDgVec(Point const &p)
 {
   return vec2((float)p.x(), (float)p.y());
+}
+
+Dg::QueryCode IntersectsBoundary(DgPolygon const &poly, seg const &s)
+{
+  Dg::QueryCode result = Dg::QueryCode::NotIntersecting;
+
+  for (auto it = poly.cEdgesBegin(); it != poly.cEdgesEnd(); it++)
+  {
+    Dg::TI2SegmentSegment<float> query;
+    Dg::TI2SegmentSegment<float>::Result qr = query(s, *it);
+    if (qr.code != Dg::QueryCode::NotIntersecting)
+    {
+      result = Dg::QueryCode::Intersecting;
+      break;
+    }
+  }
+
+  return result;
 }
 
 Module *xnPlugin_CreateModule(xn::ModuleInitData *pData)
@@ -54,21 +73,23 @@ StraightSkeleton::StraightSkeleton(xn::ModuleInitData *pData)
 
 void StraightSkeleton::Clear()
 {
-  m_segments.segments.clear();
-  m_boundaryConnections.segments.clear();
+  m_segments.clear();
+  m_boundaryConnections.clear();
   m_vertCount = 0;
   m_edgeCount = 0;
   m_faceCount = 0;
 }
 
-bool StraightSkeleton::SetGeometry(PolygonGroup const &geometry)
+bool StraightSkeleton::SetGeometry(PolygonWithHoles const &polygon)
 {
   Clear();
-  if (geometry.polygons.size() == 0)
+  if (polygon.loops.size() == 0)
     return true;
 
   Polygon2 outer;
-  for (auto it = geometry.polygons[0].cPointsBegin(); it != geometry.polygons[0].cPointsEnd(); it++)
+  auto poly_it = polygon.loops.cbegin();
+
+  for (auto it = poly_it->cPointsBegin(); it != poly_it->cPointsEnd(); it++)
     outer.push_back(Point(it->x(), it->y()));
   
   if (!outer.is_counterclockwise_oriented())
@@ -78,11 +99,11 @@ bool StraightSkeleton::SetGeometry(PolygonGroup const &geometry)
   }
 
   Polygon_with_holes poly(outer);
-
-  for (size_t i = 1; i < geometry.polygons.size(); i++)
+  poly_it++;
+  for (; poly_it != polygon.loops.cend(); poly_it++)
   {
     Polygon2 hole;
-    for (auto it = geometry.polygons[i].cPointsBegin(); it != geometry.polygons[i].cPointsEnd(); it++)
+    for (auto it = poly_it->cPointsBegin(); it != poly_it->cPointsEnd(); it++)
       hole.push_back(Point(it->x(), it->y()));
 
     if (!hole.is_clockwise_oriented())
@@ -124,18 +145,18 @@ bool StraightSkeleton::SetGeometry(PolygonGroup const &geometry)
     seg s(p0, p1);
     bool intersectsBoundary = false;
 
-    for (auto const p : geometry.polygons)
+    for (auto it = polygon.loops.cbegin(); it != polygon.loops.cend(); it++)
     {
-      if (IntersectsBoundary(p, s) == Dg::QueryCode::Intersecting)
+      if (IntersectsBoundary(*it, s) == Dg::QueryCode::Intersecting)
       {
         intersectsBoundary = true;
         break;
       }
     }
     if (intersectsBoundary)
-      m_boundaryConnections.segments.push_back(seg(p0, p1));
+      m_boundaryConnections.push_back(seg(p0, p1));
     else
-      m_segments.segments.push_back(seg(p0, p1));
+      m_segments.push_back(seg(p0, p1));
   }
 
   return true;
@@ -159,16 +180,33 @@ void StraightSkeleton::_DoFrame(UIContext *pContext)
   pContext->Checkbox("Show boundary connections##StraightSkeleton", &m_showBoundaryConnections);
 }
 
+static std::vector<xn::seg> GetTransformed(std::vector<xn::seg> segments, mat33 const &t)
+{
+  std::vector<xn::seg> transformed;
+  for (seg const &s : segments)
+  {
+    vec3 p0(s.GetP0().x(), s.GetP0().y(), 1.f);
+    vec3 p1(s.GetP1().x(), s.GetP1().y(), 1.f);
+    p0 = p0 * t;
+    p1 = p1 * t;
+    transformed.push_back(seg(vec2(p0.x(), p0.y()), vec2(p1.x(), p1.y())));
+  }
+  return transformed;
+}
+
 void StraightSkeleton::Render(Renderer *pRenderer, mat33 const &T_World_View)
 {
-  SegmentCollection transformed = m_segments.GetTransformed(T_World_View);
-  for (auto const &edge : transformed.segments)
+  std::vector<xn::seg> transformed = GetTransformed(m_segments, T_World_View);
+
+  for (auto const &edge : transformed)
     pRenderer->DrawLine(edge, m_edgeProperties);
 
   if (m_showBoundaryConnections)
   {
-    transformed = m_boundaryConnections.GetTransformed(T_World_View);
-    for (auto const &edge : transformed.segments)
+    transformed.clear();
+    std::vector<xn::seg> transformed = GetTransformed(m_boundaryConnections, T_World_View);
+
+    for (auto const &edge : transformed)
       pRenderer->DrawLine(edge, m_edgeProperties);
   }
 }

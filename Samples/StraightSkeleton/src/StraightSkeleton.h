@@ -7,7 +7,7 @@
 #include "xnCommon.h"
 #include "xnGeometry.h"
 #include "xnRenderer.h"
-#include "xnLineProperties.h"
+#include "xnDraw.h"
 #include "xnModuleInitData.h"
 
 namespace xn
@@ -25,20 +25,20 @@ public:
   void Render(xn::Renderer *pRenderer, xn::mat33 const &T_World_View) override;
   void Clear();
 
-  bool SetGeometry(xn::PolygonGroup const &) override;
+  bool SetGeometry(xn::PolygonWithHoles const &) override;
 
 private:
 
   void _DoFrame(xn::UIContext *) override;
 
-  xn::SegmentCollection m_segments;
-  xn::SegmentCollection m_boundaryConnections;
+  std::vector<xn::seg> m_segments;
+  std::vector<xn::seg> m_boundaryConnections;
   size_t m_vertCount;
   size_t m_edgeCount;
   size_t m_faceCount;
 
   bool m_showBoundaryConnections;
-  xn::LineProperties m_edgeProperties;
+  xn::Draw::Stroke m_edgeProperties;
 };
 
 #endif

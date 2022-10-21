@@ -6,7 +6,7 @@
 #include "xnModule.h"
 #include "xnCommon.h"
 #include "xnRenderer.h"
-#include "xnLineProperties.h"
+#include "xnDraw.h"
 #include "DgSet_AVL.h"
 #include "xnModuleInitData.h"
 
@@ -24,7 +24,7 @@ public:
   void Render(xn::Renderer *pRenderer, xn::mat33 const &T_World_View) override;
   void Clear();
 
-  bool SetGeometry(xn::PolygonGroup const &) override;
+  bool SetGeometry(xn::PolygonWithHoles const &) override;
 
 private:
 
@@ -46,7 +46,7 @@ private:
 
   void SetValueBounds();
 
-  xn::PolygonGroup m_geometry;
+  xn::PolygonWithHoles m_polygon;
   Dg::Set_AVL<UniqueEdge> m_edgeSet;
   size_t m_vertCount;
   size_t m_faceCount;
@@ -56,7 +56,7 @@ private:
   float m_shapeCriteria;
   int m_LloydIterations;
 
-  xn::LineProperties m_edgeProperties;
+  xn::Draw::Stroke m_edgeProperties;
 };
 
 #endif

@@ -1,6 +1,7 @@
 
 #include <algorithm>
 #include <windows.h>
+#include <vector>
 
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Constrained_Delaunay_triangulation_2.h>
@@ -11,7 +12,6 @@
 #include <CGAL/lloyd_optimize_mesh_2.h>
 
 #include "Triangulation.h"
-#include "xnGeometricQueries.h"
 #include "xnPluginAPI.h"
 #include "xnVersion.h"
 #include "xnLogger.h"
@@ -31,7 +31,7 @@ using namespace xn;
 DEFINE_STANDARD_EXPORTS
 DEFINE_DLLMAIN
 
-Dg::ErrorCode ConvexPartition(DgPolygon const &, PolygonGroup *pOut);
+Dg::ErrorCode ConvexPartition(DgPolygon const &, std::vector<xn::PolygonLoop> *pOut);
 
 Module * xnPlugin_CreateModule(xn::ModuleInitData *pData)
 {
@@ -49,19 +49,20 @@ static vec2 ToDgVec(T const &p)
   return vec2((float)p.x(), (float)p.y());
 }
 
-static std::vector<Point> GenerateSeeds(PolygonGroup const &geom)
+static std::vector<Point> GenerateSeeds(PolygonWithHoles const &polygon)
 {
   std::vector<Point> result;
 
-  for (size_t i = 1; i < geom.polygons.size(); i++)
+  auto it = polygon.loops.cbegin();
+  it++;
+  for (; it != polygon.loops.cend(); it++)
   {
-    ::xn::Polygon const &poly = geom.polygons[i];
-    PolygonGroup partition;
-    ConvexPartition(poly, &partition);
-    if (partition.polygons.size() == 0)
+    std::vector<xn::PolygonLoop> partition;
+    ConvexPartition(*it, &partition);
+    if (partition.size() == 0)
       continue;
 
-    ::xn::Polygon const &subPoly = partition.polygons[0];
+    ::xn::PolygonLoop const &subPoly = partition[0];
     vec2 centroid(0.f, 0.f);
     for (auto it = subPoly.cPointsBegin(); it != subPoly.cPointsEnd(); it++)
       centroid += *it;
@@ -139,17 +140,14 @@ void Triangulation::SetValueBounds()
   vec2 minBounds(FLT_MAX, FLT_MAX);
   vec2 maxBounds(-FLT_MAX, -FLT_MAX);
 
-  for (auto const &poly : m_geometry.polygons)
+  for (auto it = m_polygon.loops.front().cPointsBegin(); it != m_polygon.loops.front().cPointsEnd(); it++)
   {
-    for (auto it = poly.cPointsBegin(); it != poly.cPointsEnd(); it++)
-    {
-      vec2 p = *it;
+    vec2 p = *it;
 
-      for (int a = 0; a < 2; a++)
-      {
-        if (p[a] < minBounds[a]) minBounds[a] = p[a];
-        if (p[a] > maxBounds[a]) maxBounds[a] = p[a];
-      }
+    for (int a = 0; a < 2; a++)
+    {
+      if (p[a] < minBounds[a]) minBounds[a] = p[a];
+      if (p[a] > maxBounds[a]) maxBounds[a] = p[a];
     }
   }
 
@@ -162,9 +160,9 @@ void Triangulation::SetValueBounds()
     m_sizeCriteria = (m_sizeCriteriaBounds.x() + m_sizeCriteriaBounds.y()) / 2.f;
 }
 
-bool Triangulation::SetGeometry(PolygonGroup const &geometry)
+bool Triangulation::SetGeometry(PolygonWithHoles const &polygon)
 {
-  m_geometry = geometry;
+  m_polygon = polygon;
   return Update();
 }
 
@@ -174,11 +172,11 @@ bool Triangulation::Update()
 
   SetValueBounds();
 
-  std::vector<Point> seeds = GenerateSeeds(m_geometry);
+  std::vector<Point> seeds = GenerateSeeds(m_polygon);
 
   CDT cdt;
 
-  for (auto const &poly : m_geometry.polygons)
+  for (auto const &poly : m_polygon.loops)
   {
     std::vector<Vertex_handle> vertices;
     for (auto it = poly.cPointsBegin(); it != poly.cPointsEnd(); it++)

@@ -5,7 +5,7 @@
 
 #include "xnGeometry.h"
 
-Dg::ErrorCode ConvexPartition(xn::DgPolygon const &polygon, xn::PolygonGroup *pOut)
+Dg::ErrorCode ConvexPartition(xn::DgPolygon const &polygon, std::vector<xn::PolygonLoop> *pOut)
 {
   typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
   typedef CGAL::Partition_traits_2<K, CGAL::Pointer_property_map<K::Point_2>::type > Partition_traits_2;
@@ -35,13 +35,13 @@ Dg::ErrorCode ConvexPartition(xn::DgPolygon const &polygon, xn::PolygonGroup *pO
 
   for (const Polygon_2 &poly : partition_polys)
   {
-    xn::Polygon outPoly;
+    xn::PolygonLoop outPoly;
     for (Point_2 p : poly.container())
     {
       K::Point_2 point = points[p];
       outPoly.PushBack(xn::vec2((float)point.x(), (float)point.y()));
     }
-    pOut->polygons.push_back(outPoly);
+    pOut->push_back(outPoly);
   }
 
   return Dg::ErrorCode::None;
