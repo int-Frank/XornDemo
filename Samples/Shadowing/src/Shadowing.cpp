@@ -23,6 +23,8 @@ char const *xnPlugin_GetModuleName()
 
 Shadowing::Shadowing(xn::ModuleInitData *pData)
   : Module(pData)
+  , m_source(0.f, 0.f)
+  , m_hasSource(true)
 {
 
 }
@@ -52,7 +54,19 @@ void Shadowing::_DoFrame(UIContext *pContext)
   }
 }
 
+void Shadowing::MouseDown(MouseInput button, vec2 const &p)
+{
+  if (button == MouseInput::LeftButton)
+    m_source = p;
+}
+
 void Shadowing::Render(Renderer *pRenderer, mat33 const &T_World_View)
 {
+  vec3 source3(m_source.x(), m_source.y(), 1.f);
+  source3 = source3 * T_World_View;
+  vec2 source(source3.x(), source3.y());
 
+  xn::Colour clr(0xFFC51BC6);
+  xn::Draw::Fill fill(clr);
+  pRenderer->DrawFilledNGon(source, 32, 5.f, fill);
 }

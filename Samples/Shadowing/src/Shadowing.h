@@ -25,12 +25,19 @@ public:
   void Render(xn::Renderer *pRenderer, xn::mat33 const &T_World_View) override;
   void Clear();
 
+  void MouseDown(xn::MouseInput, xn::vec2 const &);
+
   bool SetGeometry(xn::PolygonWithHoles const &) override;
 
 private:
 
   void _DoFrame(xn::UIContext *) override;
 
+private:
+
+  Dg::Polygon2<float> m_shadow;
+  xn::vec2 m_source;
+  bool m_hasSource;
 };
 
 #endif
