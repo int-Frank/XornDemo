@@ -3,15 +3,15 @@
 
 #include "xnGeometry.h"
 
-class ShadowBuilder
+class VisibilityBuilder
 {
 public:
 
-  ShadowBuilder();
-  ~ShadowBuilder();
+  VisibilityBuilder();
+  ~VisibilityBuilder();
 
-  void SetRegionPolygon(xn::PolygonWithHoles const &polygon);
-  bool TryBuildRayMap(xn::vec2 const &source, xn::DgPolygon *pOut);
+  void SetRegion(xn::PolygonWithHoles const &polygon);
+  bool TryBuildVisibilityPolygon(xn::vec2 const &source, xn::DgPolygon *pOut);
 
 private:
 

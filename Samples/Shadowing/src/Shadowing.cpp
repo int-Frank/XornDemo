@@ -23,8 +23,9 @@ char const *xnPlugin_GetModuleName()
 
 Shadowing::Shadowing(xn::ModuleInitData *pData)
   : Module(pData)
+  , m_visibilityBuilder()
+  , m_visibleRegion()
   , m_source(0.f, 0.f)
-  , m_hasSource(true)
   , m_mouseDown(false)
 {
 
@@ -32,8 +33,8 @@ Shadowing::Shadowing(xn::ModuleInitData *pData)
 
 bool Shadowing::SetGeometry(PolygonWithHoles const &polygon)
 {
-  m_shadowBuilder.SetRegionPolygon(polygon);
-  m_shadowBuilder.TryBuildRayMap(m_source, &m_shadow);
+  m_visibilityBuilder.SetRegion(polygon);
+  m_visibilityBuilder.TryBuildVisibilityPolygon(m_source, &m_visibleRegion);
   return true;
 }
 
@@ -57,7 +58,7 @@ void Shadowing::MouseDown(MouseInput button, vec2 const &p)
   {
     m_source = p;
     m_mouseDown = true;
-    m_shadowBuilder.TryBuildRayMap(m_source, &m_shadow);
+    m_visibilityBuilder.TryBuildVisibilityPolygon(m_source, &m_visibleRegion);
   }
 }
 
@@ -72,7 +73,7 @@ void Shadowing::MouseMove(vec2 const &p)
   if (m_mouseDown)
   {
     m_source = p;
-    m_shadowBuilder.TryBuildRayMap(m_source, &m_shadow);
+    m_visibilityBuilder.TryBuildVisibilityPolygon(m_source, &m_visibleRegion);
   }
 }
 
@@ -89,7 +90,7 @@ void Shadowing::Render(Renderer *pRenderer, mat33 const &T_World_View)
 
   pRenderer->DrawFilledNGon(source, 32, 5.f, fillSource);
 
-  for (auto it = m_shadow.cEdgesBegin(); it != m_shadow.cEdgesEnd(); it++)
+  for (auto it = m_visibleRegion.cEdgesBegin(); it != m_visibleRegion.cEdgesEnd(); it++)
   {
     seg s = it.ToSegment();
 
@@ -98,6 +99,6 @@ void Shadowing::Render(Renderer *pRenderer, mat33 const &T_World_View)
     p0 = p0 * T_World_View;
     p1 = p1 * T_World_View;
     pRenderer->DrawLine(seg(vec2(p0.x(), p0.y()), vec2(p1.x(), p1.y())), strokeShadow);
-    pRenderer->DrawFilledNGon(p0, 32, 5.f, fillSource);
+    //pRenderer->DrawFilledNGon(p0, 32, 5.f, fillSource);
   }
 }

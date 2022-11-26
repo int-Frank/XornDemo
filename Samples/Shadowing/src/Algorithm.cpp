@@ -28,7 +28,7 @@ static void GetVertexIDs(ID edge, ID *pa, ID *pb)
   *pb = edge & 0xFFFFFFFFull;
 }
 
-class ShadowBuilder::PIMPL
+class VisibilityBuilder::PIMPL
 {
   enum Side : uint32_t
   {
@@ -45,12 +45,12 @@ class ShadowBuilder::PIMPL
     float distanceSq;
   };
 
-  struct Node
+  struct Ray
   {
     vec2 point0;
-    ID ID0;
     vec2 point1;
-    ID ID1; // InvalidID -> point1 does not exist, NoID -> point1 is not a vertex
+    ID ID0;
+    ID ID1;
   };
 
   struct Vertex
@@ -63,36 +63,35 @@ class ShadowBuilder::PIMPL
 
 public:
 
-  void SetRegionPolygon(PolygonWithHoles const &polygon);
-  bool TryBuildRayMap(vec2 const &source, DgPolygon *pOut);
+  void SetRegion(PolygonWithHoles const &polygon);
+  bool TryBuildVisibilityPolygon(vec2 const &source, DgPolygon *pOut);
 
 private:
 
   static bool IgnoreListContains(ID id, TempData const *pIgnoreList, uint32_t sizeIgnoreList);
 
-  bool IsConnected(ID, Node const &);
+  bool IsConnected(ID, Ray const &);
   bool GetClosestIntersect(ray2 const &ray, vec2 *pPoint, ID *edgeID, TempData const *pIgnoreList, uint32_t sizeIgnoreList);
   Side GetSide(ID id, ray2 const &ray);
-  bool GetCoverage(xn::vec2 const &source, xn::DgPolygon *pOut);
+  bool TurnRaysIntoPolygon(xn::vec2 const &source, xn::DgPolygon *pOut);
 
 private:
 
   static ID const s_InvalidID;
 
-  Dg::Map_AVL<ID, Vertex> m_verts;
-  Dg::Map_AVL<float, Node> m_shadowNodes;
+  Dg::Map_AVL<ID, Vertex> m_regionVerts;
+  Dg::Map_AVL<float, Ray> m_rays;
 };
 
-
-ID const ShadowBuilder::PIMPL::s_InvalidID = 0;
+ID const VisibilityBuilder::PIMPL::s_InvalidID = 0;
 
 //----------------------------------------------------------------
-// ShadowBuilder::PIMPL
+// VisibilityBuilder::PIMPL
 //----------------------------------------------------------------
 
-void ShadowBuilder::PIMPL::SetRegionPolygon(PolygonWithHoles const &polygon)
+void VisibilityBuilder::PIMPL::SetRegion(PolygonWithHoles const &polygon)
 {
-  m_verts.clear();
+  m_regionVerts.clear();
   ID id = 1;
   for (auto poly_it = polygon.loops.cbegin(); poly_it != polygon.loops.cend(); poly_it++)
   {
@@ -109,7 +108,7 @@ void ShadowBuilder::PIMPL::SetRegionPolygon(PolygonWithHoles const &polygon)
       v.prevID = id + localPrevID;
       v.processed = false;
 
-      m_verts.insert(Dg::Pair<ID, Vertex>(id + localID, v));
+      m_regionVerts.insert(Dg::Pair<ID, Vertex>(id + localID, v));
 
       localID++;
     }
@@ -117,18 +116,18 @@ void ShadowBuilder::PIMPL::SetRegionPolygon(PolygonWithHoles const &polygon)
   }
 }
 
-bool ShadowBuilder::PIMPL::TryBuildRayMap(vec2 const &source, DgPolygon *pOut)
+bool VisibilityBuilder::PIMPL::TryBuildVisibilityPolygon(vec2 const &source, DgPolygon *pOut)
 {
   float epsilon = Dg::Constants<float>::EPSILON;
 
   pOut->Clear();
-  m_shadowNodes.clear();
-  for (auto it = m_verts.begin_rand(); it != m_verts.end_rand(); it++)
+  m_rays.clear();
+  for (auto it = m_regionVerts.begin_rand(); it != m_regionVerts.end_rand(); it++)
     it->second.processed = false;
 
-  TempData *pTempData = new TempData[m_verts.size()]{};
+  TempData *pTempData = new TempData[m_regionVerts.size()]{};
 
-  for (auto it = m_verts.begin_rand(); it != m_verts.end_rand(); it++)
+  for (auto it = m_regionVerts.begin_rand(); it != m_regionVerts.end_rand(); it++)
   {
     // If already processed, continue
     if (it->second.processed)
@@ -152,7 +151,7 @@ bool ShadowBuilder::PIMPL::TryBuildRayMap(vec2 const &source, DgPolygon *pOut)
     uint32_t tempSize = 1;
 
     // Find all other vertices that are on the ray
-    for (auto it2 = it; it2 != m_verts.end_rand(); it2++)
+    for (auto it2 = it; it2 != m_regionVerts.end_rand(); it2++)
     {
       if (it2->second.processed)
         continue;
@@ -234,7 +233,7 @@ bool ShadowBuilder::PIMPL::TryBuildRayMap(vec2 const &source, DgPolygon *pOut)
       }
     }
 
-    Node node = {};
+    Ray node = {};
     node.point0 = pTempData[0].point;
     node.ID0 = pTempData[0].id;
     node.ID1 = s_InvalidID;
@@ -248,14 +247,14 @@ bool ShadowBuilder::PIMPL::TryBuildRayMap(vec2 const &source, DgPolygon *pOut)
 
     // We now have the start and end point!
     float angle = atan2(v.y(), v.x());
-    m_shadowNodes[angle] = node;
+    m_rays[angle] = node;
   }
   delete[] pTempData;
 
-  return GetCoverage(source, pOut);
+  return TurnRaysIntoPolygon(source, pOut);
 }
 
-bool ShadowBuilder::PIMPL::IgnoreListContains(ID id, TempData const *pIgnoreList, uint32_t sizeIgnoreList)
+bool VisibilityBuilder::PIMPL::IgnoreListContains(ID id, TempData const *pIgnoreList, uint32_t sizeIgnoreList)
 {
   for (uint32_t i = 0; i < sizeIgnoreList; i++)
   {
@@ -265,16 +264,16 @@ bool ShadowBuilder::PIMPL::IgnoreListContains(ID id, TempData const *pIgnoreList
   return false;
 }
 
-bool ShadowBuilder::PIMPL::GetClosestIntersect(ray2 const &ray, vec2 *pPoint, ID *pEdgeID, TempData const *pIgnoreList, uint32_t sizeIgnoreList)
+bool VisibilityBuilder::PIMPL::GetClosestIntersect(ray2 const &ray, vec2 *pPoint, ID *pEdgeID, TempData const *pIgnoreList, uint32_t sizeIgnoreList)
 {
   float ur = FLT_MAX;
-  for (auto it = m_verts.begin_rand(); it != m_verts.end_rand(); it++)
+  for (auto it = m_regionVerts.begin_rand(); it != m_regionVerts.end_rand(); it++)
   {
     if (IgnoreListContains(it->first, pIgnoreList, sizeIgnoreList) ||
         IgnoreListContains(it->second.nextID, pIgnoreList, sizeIgnoreList))
       continue;
 
-    vec2 p1 = m_verts.at(it->second.nextID).point;
+    vec2 p1 = m_regionVerts.at(it->second.nextID).point;
     seg s(it->second.point, p1);
 
     Dg::FI2SegmentRay<float> query;
@@ -293,14 +292,14 @@ bool ShadowBuilder::PIMPL::GetClosestIntersect(ray2 const &ray, vec2 *pPoint, ID
   return ur != FLT_MAX;
 }
 
-ShadowBuilder::PIMPL::Side ShadowBuilder::PIMPL::GetSide(ID id, ray2 const &ray)
+VisibilityBuilder::PIMPL::Side VisibilityBuilder::PIMPL::GetSide(ID id, ray2 const &ray)
 {
   if (id > 0xFFFFFFFFull)
     return SideBoth;
 
   float epsilon = Dg::Constants<float>::EPSILON;
-  vec2 next = m_verts.at(m_verts.at(id).nextID).point - ray.Origin();
-  vec2 prev = m_verts.at(m_verts.at(id).prevID).point - ray.Origin();
+  vec2 next = m_regionVerts.at(m_regionVerts.at(id).nextID).point - ray.Origin();
+  vec2 prev = m_regionVerts.at(m_regionVerts.at(id).prevID).point - ray.Origin();
 
   float edgeNext = Dg::PerpDot(ray.Direction(), next);
   float edgePrev = Dg::PerpDot(ray.Direction(), prev);
@@ -316,11 +315,11 @@ ShadowBuilder::PIMPL::Side ShadowBuilder::PIMPL::GetSide(ID id, ray2 const &ray)
   return Side(sideNext | sidePrev);
 }
 
-bool ShadowBuilder::PIMPL::IsConnected(ID id, Node const &node)
+bool VisibilityBuilder::PIMPL::IsConnected(ID id, Ray const &node)
 {
   ID a, b, c, d;
-  c = m_verts.at(node.ID0).nextID;
-  d = m_verts.at(node.ID0).prevID;
+  c = m_regionVerts.at(node.ID0).nextID;
+  d = m_regionVerts.at(node.ID0).prevID;
   GetVertexIDs(node.ID1, &a, &b);
 
   bool connected = false;
@@ -331,18 +330,18 @@ bool ShadowBuilder::PIMPL::IsConnected(ID id, Node const &node)
   return connected;
 }
 
-bool ShadowBuilder::PIMPL::GetCoverage(xn::vec2 const &source, xn::DgPolygon *pOut)
+bool VisibilityBuilder::PIMPL::TurnRaysIntoPolygon(xn::vec2 const &source, xn::DgPolygon *pOut)
 {
-  if (m_shadowNodes.size() < 3)
+  if (m_rays.size() < 3)
     return false;
 
-  auto it = m_shadowNodes.cbegin();
-  for (size_t i = 0; i < m_shadowNodes.size(); i++)
+  auto it = m_rays.cbegin();
+  for (size_t i = 0; i < m_rays.size(); i++)
   {
     auto itPrev = it;
     it++;
-    if (it == m_shadowNodes.cend())
-      it = m_shadowNodes.cbegin();
+    if (it == m_rays.cend())
+      it = m_rays.cbegin();
 
     if (it->second.ID1 == s_InvalidID)
     {
@@ -351,8 +350,7 @@ bool ShadowBuilder::PIMPL::GetCoverage(xn::vec2 const &source, xn::DgPolygon *pO
     else if (IsConnected(it->second.ID0, itPrev->second))
     {
       pOut->PushBack(it->second.point0);
-      if (it->second.ID1 != s_InvalidID)
-        pOut->PushBack(it->second.point1);
+      pOut->PushBack(it->second.point1);
     }
     else
     {
@@ -364,26 +362,26 @@ bool ShadowBuilder::PIMPL::GetCoverage(xn::vec2 const &source, xn::DgPolygon *pO
 }
 
 //----------------------------------------------------------------
-// ShadowBuilder
+// VisibilityBuilder
 //----------------------------------------------------------------
 
-ShadowBuilder::ShadowBuilder()
+VisibilityBuilder::VisibilityBuilder()
   : m_pimpl(new PIMPL())
 {
 
 }
 
-ShadowBuilder::~ShadowBuilder()
+VisibilityBuilder::~VisibilityBuilder()
 {
   delete m_pimpl;
 }
 
-void ShadowBuilder::SetRegionPolygon(xn::PolygonWithHoles const &polygon)
+void VisibilityBuilder::SetRegion(xn::PolygonWithHoles const &polygon)
 {
-  m_pimpl->SetRegionPolygon(polygon);
+  m_pimpl->SetRegion(polygon);
 }
 
-bool ShadowBuilder::TryBuildRayMap(xn::vec2 const &source, xn::DgPolygon *pOut)
+bool VisibilityBuilder::TryBuildVisibilityPolygon(xn::vec2 const &source, xn::DgPolygon *pOut)
 {
-  return m_pimpl->TryBuildRayMap(source, pOut);
+  return m_pimpl->TryBuildVisibilityPolygon(source, pOut);
 }

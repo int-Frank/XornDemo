@@ -38,11 +38,9 @@ private:
 
 private:
 
-  ShadowBuilder m_shadowBuilder;
-
-  Dg::Polygon2<float> m_shadow;
+  VisibilityBuilder m_visibilityBuilder;
+  Dg::Polygon2<float> m_visibleRegion;
   xn::vec2 m_source;
-  bool m_hasSource;
   bool m_mouseDown;
 };
 
