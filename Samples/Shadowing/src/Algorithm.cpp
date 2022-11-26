@@ -15,7 +15,18 @@
 using namespace xn;
 
 typedef Dg::Ray2<float> ray2;
-typedef uint32_t VertexID; // Polygon vertex id.
+typedef uint64_t ID;
+
+static ID GetEdgeID(ID a, ID b)
+{
+  return (a << 32) | (b & 0xFFFFFFFFull);
+}
+
+static void GetVertexIDs(ID edge, ID *pa, ID *pb)
+{
+  *pa = edge >> 32;
+  *pb = edge & 0xFFFFFFFFull;
+}
 
 class ShadowBuilder::PIMPL
 {
@@ -30,22 +41,22 @@ class ShadowBuilder::PIMPL
   struct TempData
   {
     vec2 point;
-    VertexID id;
+    ID id;
     float distanceSq;
   };
 
   struct Node
   {
     vec2 point0;
-    VertexID ID0;
+    ID ID0;
     vec2 point1;
-    VertexID ID1; // InvalidID -> point1 does not exist, NoID -> point1 is not a vertex
+    ID ID1; // InvalidID -> point1 does not exist, NoID -> point1 is not a vertex
   };
 
   struct Vertex
   {
-    VertexID prevID;
-    VertexID nextID;
+    ID prevID;
+    ID nextID;
     vec2 point;
     bool processed;
   };
@@ -57,24 +68,23 @@ public:
 
 private:
 
-  static bool IgnoreListContains(VertexID id, TempData const *pIgnoreList, uint32_t sizeIgnoreList);
+  static bool IgnoreListContains(ID id, TempData const *pIgnoreList, uint32_t sizeIgnoreList);
 
-  bool GetClosestIntersect(ray2 const &ray, vec2 *pPoint, TempData const *pIgnoreList, uint32_t sizeIgnoreList);
-  Side GetSide(VertexID id, ray2 const &ray);
+  bool IsConnected(ID, Node const &);
+  bool GetClosestIntersect(ray2 const &ray, vec2 *pPoint, ID *edgeID, TempData const *pIgnoreList, uint32_t sizeIgnoreList);
+  Side GetSide(ID id, ray2 const &ray);
   bool GetCoverage(xn::vec2 const &source, xn::DgPolygon *pOut);
 
 private:
 
-  static VertexID const s_InvalidID;
-  static VertexID const s_EdgeID;
+  static ID const s_InvalidID;
 
-  Dg::Map_AVL<VertexID, Vertex> m_verts;
+  Dg::Map_AVL<ID, Vertex> m_verts;
   Dg::Map_AVL<float, Node> m_shadowNodes;
 };
 
 
-VertexID const ShadowBuilder::PIMPL::s_InvalidID = 0xFFFFFFFF;
-VertexID const ShadowBuilder::PIMPL::s_EdgeID = 0xFFFFFFFF - 1;
+ID const ShadowBuilder::PIMPL::s_InvalidID = 0;
 
 //----------------------------------------------------------------
 // ShadowBuilder::PIMPL
@@ -83,15 +93,15 @@ VertexID const ShadowBuilder::PIMPL::s_EdgeID = 0xFFFFFFFF - 1;
 void ShadowBuilder::PIMPL::SetRegionPolygon(PolygonWithHoles const &polygon)
 {
   m_verts.clear();
-  VertexID id = 0;
+  ID id = 1;
   for (auto poly_it = polygon.loops.cbegin(); poly_it != polygon.loops.cend(); poly_it++)
   {
     uint32_t size = (uint32_t)poly_it->Size();
-    VertexID localID = 0;
+    ID localID = 0;
     for (auto vert_it = poly_it->cPointsBegin(); vert_it != poly_it->cPointsEnd(); vert_it++)
     {
-      VertexID localNextID = (localID + 1) % size;
-      VertexID localPrevID = (localID + size - 1) % size;
+      ID localNextID = (localID + 1) % size;
+      ID localPrevID = (localID + size - 1) % size;
 
       Vertex v;
       v.point = *vert_it;
@@ -99,7 +109,7 @@ void ShadowBuilder::PIMPL::SetRegionPolygon(PolygonWithHoles const &polygon)
       v.prevID = id + localPrevID;
       v.processed = false;
 
-      m_verts.insert(Dg::Pair<VertexID, Vertex>(id + localID, v));
+      m_verts.insert(Dg::Pair<ID, Vertex>(id + localID, v));
 
       localID++;
     }
@@ -180,8 +190,9 @@ bool ShadowBuilder::PIMPL::TryBuildRayMap(vec2 const &source, DgPolygon *pOut)
     // If we find a valid back point, cull all temp points beyond this point.
     {
       vec2 endPoint = {};
+      ID edgeID = s_InvalidID;
 
-      if (GetClosestIntersect(ray, &endPoint, pTempData, tempSize))
+      if (GetClosestIntersect(ray, &endPoint, &edgeID, pTempData, tempSize))
       {
         float backDistSq = Dg::MagSq(endPoint - source);
         uint32_t oldTempSize = tempSize;
@@ -197,7 +208,7 @@ bool ShadowBuilder::PIMPL::TryBuildRayMap(vec2 const &source, DgPolygon *pOut)
         if (tempSize > 0)
         {
           pTempData[tempSize].point = endPoint;
-          pTempData[tempSize].id = s_EdgeID;
+          pTempData[tempSize].id = edgeID;
           pTempData[tempSize].distanceSq = backDistSq;
           tempSize++;
         }
@@ -213,7 +224,7 @@ bool ShadowBuilder::PIMPL::TryBuildRayMap(vec2 const &source, DgPolygon *pOut)
     uint32_t side = SideNone;
     for (uint32_t i = 0; i < tempSize; i++)
     {
-      VertexID id = pTempData[i].id;
+      ID id = pTempData[i].id;
       side = side | GetSide(id, ray);
 
       if (side == SideBoth)
@@ -244,7 +255,7 @@ bool ShadowBuilder::PIMPL::TryBuildRayMap(vec2 const &source, DgPolygon *pOut)
   return GetCoverage(source, pOut);
 }
 
-bool ShadowBuilder::PIMPL::IgnoreListContains(VertexID id, TempData const *pIgnoreList, uint32_t sizeIgnoreList)
+bool ShadowBuilder::PIMPL::IgnoreListContains(ID id, TempData const *pIgnoreList, uint32_t sizeIgnoreList)
 {
   for (uint32_t i = 0; i < sizeIgnoreList; i++)
   {
@@ -254,7 +265,7 @@ bool ShadowBuilder::PIMPL::IgnoreListContains(VertexID id, TempData const *pIgno
   return false;
 }
 
-bool ShadowBuilder::PIMPL::GetClosestIntersect(ray2 const &ray, vec2 *pPoint, TempData const *pIgnoreList, uint32_t sizeIgnoreList)
+bool ShadowBuilder::PIMPL::GetClosestIntersect(ray2 const &ray, vec2 *pPoint, ID *pEdgeID, TempData const *pIgnoreList, uint32_t sizeIgnoreList)
 {
   float ur = FLT_MAX;
   for (auto it = m_verts.begin_rand(); it != m_verts.end_rand(); it++)
@@ -275,15 +286,16 @@ bool ShadowBuilder::PIMPL::GetClosestIntersect(ray2 const &ray, vec2 *pPoint, Te
     if (result.pointResult.ur < ur)
     {
       ur = result.pointResult.ur;
+      *pEdgeID = GetEdgeID(it->first, it->second.nextID);
       *pPoint = result.pointResult.point;
     }
   }
   return ur != FLT_MAX;
 }
 
-ShadowBuilder::PIMPL::Side ShadowBuilder::PIMPL::GetSide(VertexID id, ray2 const &ray)
+ShadowBuilder::PIMPL::Side ShadowBuilder::PIMPL::GetSide(ID id, ray2 const &ray)
 {
-  if (id == s_EdgeID)
+  if (id > 0xFFFFFFFFull)
     return SideBoth;
 
   float epsilon = Dg::Constants<float>::EPSILON;
@@ -304,25 +316,27 @@ ShadowBuilder::PIMPL::Side ShadowBuilder::PIMPL::GetSide(VertexID id, ray2 const
   return Side(sideNext | sidePrev);
 }
 
+bool ShadowBuilder::PIMPL::IsConnected(ID id, Node const &node)
+{
+  ID a, b, c, d;
+  c = m_verts.at(node.ID0).nextID;
+  d = m_verts.at(node.ID0).prevID;
+  GetVertexIDs(node.ID1, &a, &b);
+
+  bool connected = false;
+  connected = connected || (a != s_InvalidID) && a == id;
+  connected = connected || (b != s_InvalidID) && b == id;
+  connected = connected || c == id;
+  connected = connected || d == id;
+  return connected;
+}
+
 bool ShadowBuilder::PIMPL::GetCoverage(xn::vec2 const &source, xn::DgPolygon *pOut)
 {
   if (m_shadowNodes.size() < 3)
     return false;
 
   auto it = m_shadowNodes.cbegin();
-  float closestDistSq = FLT_MAX;
-
-  for (auto it2 = m_shadowNodes.cbegin(); it2 != m_shadowNodes.cend(); it2++)
-  {
-    float distSq = Dg::MagSq((source - it2->second.point0));
-    if (distSq < closestDistSq)
-    {
-      it = it2;
-      closestDistSq = distSq;
-    }
-  }
-
-  bool lastWasVertex = true;
   for (size_t i = 0; i < m_shadowNodes.size(); i++)
   {
     auto itPrev = it;
@@ -332,40 +346,20 @@ bool ShadowBuilder::PIMPL::GetCoverage(xn::vec2 const &source, xn::DgPolygon *pO
 
     if (it->second.ID1 == s_InvalidID)
     {
-      lastWasVertex = true;
       pOut->PushBack(it->second.point0);
-      continue;
+    }
+    else if (IsConnected(it->second.ID0, itPrev->second))
+    {
+      pOut->PushBack(it->second.point0);
+      if (it->second.ID1 != s_InvalidID)
+        pOut->PushBack(it->second.point1);
+    }
+    else
+    {
+      pOut->PushBack(it->second.point1);
+      pOut->PushBack(it->second.point0);
     }
 
-    if (!lastWasVertex)
-    {
-      pOut->PushBack(it->second.point0);
-      lastWasVertex = true;
-      if (it->second.ID1 != s_InvalidID)
-      {
-        pOut->PushBack(it->second.point1);
-        lastWasVertex = false;
-      }
-    }
-    else 
-    {
-      if (itPrev->second.ID0 == it->second.ID0)
-      {
-        pOut->PushBack(it->second.point0);
-        lastWasVertex = true;
-        if (it->second.ID1 != s_InvalidID)
-        {
-          pOut->PushBack(it->second.point1);
-          lastWasVertex = false;
-        }
-      }
-      else
-      {
-        pOut->PushBack(it->second.point1);
-        pOut->PushBack(it->second.point0);
-        lastWasVertex = false;
-      }
-    }
   }
 }
 
