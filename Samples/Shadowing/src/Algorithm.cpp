@@ -195,8 +195,8 @@ bool VisibilityBuilder::PIMPL::TryBuildVisibilityPolygon(vec2 const &source, DgP
       [](RayVertex const &a, RayVertex const &b) {return a.distanceSq < b.distanceSq; });
 
     // Next, find the closest boundary intersection with the ray.
-    // If none in found, this means an already processed vertex is the
-    // boundary.
+    // If none in found, this means the last vertex in the list is the
+    // furtherest point.
     ClipRayVertsAgainstBoundary(ray);
 
     // No vertex can be seen.
@@ -258,8 +258,6 @@ void VisibilityBuilder::PIMPL::FindAllVertsOnRay(ray2 const &ray, Dg::Map_AVL<ID
     it->second.processed = true;
     vec2 v2 = it->second.point - ray.Origin();
     float lenSq2 = Dg::MagSq(v2);
-    if (Dg::IsZero(lenSq2))
-      continue;
 
     m_pRayVerts[m_rayVertsSize].id = it->first;
     m_pRayVerts[m_rayVertsSize].point = it->second.point;
@@ -358,30 +356,30 @@ VisibilityBuilder::PIMPL::Side VisibilityBuilder::PIMPL::GetSide(ID id, ray2 con
   return Side(sideNext | sidePrev);
 }
 
-bool VisibilityBuilder::PIMPL::IsConnected(ID id, VisibilityRay const &node) const
+bool VisibilityBuilder::PIMPL::IsConnected(ID id, VisibilityRay const &ray) const
 {
   // Three cases:
-  //   - node is a single vertex
-  //   - node is a vertex -> edge ray
-  //   - node is a vertex -> vertex ray
+  //   - ray is a single vertex
+  //   - ray is a vertex -> edge ray
+  //   - ray is a vertex -> vertex ray
 
-  ID a = m_regionVerts.at(node.ID0).nextID;
-  ID b = m_regionVerts.at(node.ID0).prevID;
+  ID a = m_regionVerts.at(ray.ID0).nextID;
+  ID b = m_regionVerts.at(ray.ID0).prevID;
   bool connected = false;
 
   connected = connected || a == id;
   connected = connected || b == id;
 
-  if (node.ID1 != s_InvalidID)
+  if (ray.ID1 != s_InvalidID)
   {
-    if (IsEdgeID(node.ID1))
+    if (IsEdgeID(ray.ID1))
     {
-      GetVertexIDs(node.ID1, &a, &b);
+      GetVertexIDs(ray.ID1, &a, &b);
     }
     else
     {
-      a = m_regionVerts.at(node.ID1).nextID;
-      b = m_regionVerts.at(node.ID1).prevID;
+      a = m_regionVerts.at(ray.ID1).nextID;
+      b = m_regionVerts.at(ray.ID1).prevID;
     }
     connected = connected || a == id;
     connected = connected || b == id;
