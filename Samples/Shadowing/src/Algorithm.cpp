@@ -416,6 +416,7 @@ bool VisibilityBuilder::PIMPL::TurnRaysIntoPolygon(xn::vec2 const &source, xn::D
       pOut->PushBack(it->second.point0);
     }
   }
+  return true;
 }
 
 //----------------------------------------------------------------
