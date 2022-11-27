@@ -84,7 +84,7 @@ public:
 private:
 
   void FindAllVertsOnRay(ray2 const &, Dg::Map_AVL<ID, Vertex>::iterator_rand seed, float epsilon);
-  void ClipRayVertsAgainstBoundary(ray2 const &);
+  void ClipRayAgainstBoundary(ray2 const &);
   bool RayVertsContain(ID id) const;
   bool IsConnected(ID, VisibilityRay const &) const;
   bool GetClosestIntersect(ray2 const &ray, vec2 *pPoint, ID *edgeID) const;
@@ -197,14 +197,14 @@ bool VisibilityBuilder::PIMPL::TryBuildVisibilityPolygon(vec2 const &source, DgP
     // Next, find the closest boundary intersection with the ray.
     // If none in found, this means the last vertex in the list is the
     // furtherest point.
-    ClipRayVertsAgainstBoundary(ray);
+    ClipRayAgainstBoundary(ray);
 
     // No vertex can be seen.
     if (m_rayVertsSize == 0)
       continue;
 
-    // Now check all edges from all ray-verts are on the same side. 
-    // Otherwise they are going to cut off the line of sight.
+    // Check if any of the edges connected to the ray-verts are going to cut off
+    // the line of sight.
     uint32_t side = SideNone;
     for (uint32_t i = 0; i < m_rayVertsSize; i++)
     {
@@ -266,7 +266,7 @@ void VisibilityBuilder::PIMPL::FindAllVertsOnRay(ray2 const &ray, Dg::Map_AVL<ID
   }
 }
 
-void VisibilityBuilder::PIMPL::ClipRayVertsAgainstBoundary(ray2 const &r)
+void VisibilityBuilder::PIMPL::ClipRayAgainstBoundary(ray2 const &r)
 {
   vec2 endPoint = {};
   ID edgeID = s_InvalidID;
@@ -284,7 +284,7 @@ void VisibilityBuilder::PIMPL::ClipRayVertsAgainstBoundary(ray2 const &r)
       }
     }
 
-    // Add in the back point we just found if we still have verts on this ray.
+    // Add in the back point if we haven't clipped the entire ray.
     if (m_rayVertsSize > 0)
     {
       m_pRayVerts[m_rayVertsSize].point = endPoint;
