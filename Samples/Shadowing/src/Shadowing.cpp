@@ -27,6 +27,7 @@ Shadowing::Shadowing(xn::ModuleInitData *pData)
   , m_visibleRegion()
   , m_source(0.f, 0.f)
   , m_mouseDown(false)
+  , m_showVertices(false)
 {
 
 }
@@ -50,6 +51,16 @@ void Shadowing::_DoFrame(UIContext *pContext)
     pContext->PopTextWrapPos();
     pContext->EndPopup();
   }
+  pContext->Separator();
+
+  pContext->Checkbox("Show vertices##Shadowing", &m_showVertices);
+
+  static float stepSize = 1.f;
+  pContext->InputFloat("Step size##Shadowing", &stepSize, 1.f, 10.f);
+  if (pContext->InputFloat("x##Shadowing", &m_source.x(), stepSize, stepSize))
+    m_visibilityBuilder.TryBuildVisibilityPolygon(m_source, &m_visibleRegion);
+  if (pContext->InputFloat("y##Shadowing", &m_source.y(), stepSize, stepSize))
+    m_visibilityBuilder.TryBuildVisibilityPolygon(m_source, &m_visibleRegion);
 }
 
 void Shadowing::MouseDown(MouseInput button, vec2 const &p)
@@ -99,6 +110,8 @@ void Shadowing::Render(Renderer *pRenderer, mat33 const &T_World_View)
     p0 = p0 * T_World_View;
     p1 = p1 * T_World_View;
     pRenderer->DrawLine(seg(vec2(p0.x(), p0.y()), vec2(p1.x(), p1.y())), strokeShadow);
-    //pRenderer->DrawFilledNGon(p0, 32, 5.f, fillSource);
+    
+    if (m_showVertices)
+      pRenderer->DrawFilledNGon(p0, 32, 5.f, fillSource);
   }
 }

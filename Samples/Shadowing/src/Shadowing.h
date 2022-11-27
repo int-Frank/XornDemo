@@ -42,6 +42,7 @@ private:
   Dg::Polygon2<float> m_visibleRegion;
   xn::vec2 m_source;
   bool m_mouseDown;
+  bool m_showVertices;
 };
 
 #endif

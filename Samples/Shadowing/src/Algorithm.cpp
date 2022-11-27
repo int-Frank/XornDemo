@@ -19,6 +19,13 @@ typedef uint64_t ID;
 
 static ID GetEdgeID(ID a, ID b)
 {
+  if (a > b)
+  {
+    ID temp = a;
+    a = b;
+    b = temp;
+  }
+
   return (a << 32) | (b & 0xFFFFFFFFull);
 }
 
@@ -26,6 +33,11 @@ static void GetVertexIDs(ID edge, ID *pa, ID *pb)
 {
   *pa = edge >> 32;
   *pb = edge & 0xFFFFFFFFull;
+}
+
+static bool IsEdgeID(ID id)
+{
+  return id > 0xFFFFFFFFull;
 }
 
 class VisibilityBuilder::PIMPL
@@ -73,7 +85,7 @@ private:
 
   void FindAllVertsOnRay(ray2 const &, Dg::Map_AVL<ID, Vertex>::iterator_rand seed, float epsilon);
   void ClipRayVertsAgainstBoundary(ray2 const &);
-  bool TempListContains(ID id) const;
+  bool RayVertsContain(ID id) const;
   bool IsConnected(ID, VisibilityRay const &) const;
   bool GetClosestIntersect(ray2 const &ray, vec2 *pPoint, ID *edgeID) const;
   Side GetSide(ID id, ray2 const &ray) const;
@@ -218,7 +230,7 @@ bool VisibilityBuilder::PIMPL::TryBuildVisibilityPolygon(vec2 const &source, DgP
       r.point1 = m_pRayVerts[m_rayVertsSize - 1].point;
     }
 
-    // We now have the start and end point!
+    // We now have the near and far point of the ray!
     float angle = atan2(v.y(), v.x());
     m_rays[angle] = r;
   }
@@ -285,7 +297,7 @@ void VisibilityBuilder::PIMPL::ClipRayVertsAgainstBoundary(ray2 const &r)
   }
 }
 
-bool VisibilityBuilder::PIMPL::TempListContains(ID id) const
+bool VisibilityBuilder::PIMPL::RayVertsContain(ID id) const
 {
   for (uint32_t i = 0; i < m_rayVertsSize; i++)
   {
@@ -300,7 +312,7 @@ bool VisibilityBuilder::PIMPL::GetClosestIntersect(ray2 const &ray, vec2 *pPoint
   float ur = FLT_MAX;
   for (auto it = m_regionVerts.cbegin_rand(); it != m_regionVerts.cend_rand(); it++)
   {
-    if (TempListContains(it->first) || TempListContains(it->second.nextID))
+    if (RayVertsContain(it->first) || RayVertsContain(it->second.nextID))
       continue;
 
     vec2 p1 = m_regionVerts.at(it->second.nextID).point;
@@ -325,7 +337,7 @@ bool VisibilityBuilder::PIMPL::GetClosestIntersect(ray2 const &ray, vec2 *pPoint
 VisibilityBuilder::PIMPL::Side VisibilityBuilder::PIMPL::GetSide(ID id, ray2 const &ray) const
 {
   // We have two IDs; id is an edge intersection.
-  if (id > 0xFFFFFFFFull)
+  if (IsEdgeID(id))
     return SideBoth;
 
   float epsilon = Dg::Constants<float>::EPSILON;
@@ -348,16 +360,33 @@ VisibilityBuilder::PIMPL::Side VisibilityBuilder::PIMPL::GetSide(ID id, ray2 con
 
 bool VisibilityBuilder::PIMPL::IsConnected(ID id, VisibilityRay const &node) const
 {
-  ID a, b, c, d;
-  c = m_regionVerts.at(node.ID0).nextID;
-  d = m_regionVerts.at(node.ID0).prevID;
-  GetVertexIDs(node.ID1, &a, &b);
+  // Three cases:
+  //   - node is a single vertex
+  //   - node is a vertex -> edge ray
+  //   - node is a vertex -> vertex ray
 
+  ID a = m_regionVerts.at(node.ID0).nextID;
+  ID b = m_regionVerts.at(node.ID0).prevID;
   bool connected = false;
-  connected = connected || (a != s_InvalidID) && a == id;
-  connected = connected || (b != s_InvalidID) && b == id;
-  connected = connected || c == id;
-  connected = connected || d == id;
+
+  connected = connected || a == id;
+  connected = connected || b == id;
+
+  if (node.ID1 != s_InvalidID)
+  {
+    if (IsEdgeID(node.ID1))
+    {
+      GetVertexIDs(node.ID1, &a, &b);
+    }
+    else
+    {
+      a = m_regionVerts.at(node.ID1).nextID;
+      b = m_regionVerts.at(node.ID1).prevID;
+    }
+    connected = connected || a == id;
+    connected = connected || b == id;
+  }
+
   return connected;
 }
 
@@ -388,7 +417,6 @@ bool VisibilityBuilder::PIMPL::TurnRaysIntoPolygon(xn::vec2 const &source, xn::D
       pOut->PushBack(it->second.point1);
       pOut->PushBack(it->second.point0);
     }
-
   }
 }
 
