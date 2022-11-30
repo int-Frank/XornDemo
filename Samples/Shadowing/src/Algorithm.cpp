@@ -124,7 +124,7 @@ private:
 
   std::vector<Vertex> m_regionVerts;
   Dg::Map_AVL<float, VisibilityRay> m_rays;
-  bool *m_pProcessedFlags;
+  std::vector<bool> m_processedFlags;
   RayVertex *m_pRayVerts;
   uint32_t m_rayVertsSize;
 };
@@ -137,7 +137,6 @@ VertexID const ID::s_InvalidID = 0xFFFFFFFF;
 
 VisibilityBuilder::PIMPL::PIMPL()
   : m_pRayVerts(nullptr)
-  , m_pProcessedFlags(nullptr)
   , m_rayVertsSize(0)
 {
 
@@ -146,7 +145,6 @@ VisibilityBuilder::PIMPL::PIMPL()
 VisibilityBuilder::PIMPL::~PIMPL()
 {
   delete[] m_pRayVerts;
-  delete[] m_pProcessedFlags;
 }
 
 void VisibilityBuilder::PIMPL::SetRegion(PolygonWithHoles const &polygon)
@@ -176,8 +174,7 @@ void VisibilityBuilder::PIMPL::SetRegion(PolygonWithHoles const &polygon)
   delete[] m_pRayVerts;
   m_pRayVerts = new RayVertex[m_regionVerts.size()]{};
 
-  delete[] m_pProcessedFlags;
-  m_pProcessedFlags = new bool[m_regionVerts.size()]{};
+  m_processedFlags.resize(m_regionVerts.size());
 }
 
 bool VisibilityBuilder::PIMPL::TryBuildVisibilityPolygon(vec2 const &source, DgPolygon *pOut)
@@ -187,13 +184,13 @@ bool VisibilityBuilder::PIMPL::TryBuildVisibilityPolygon(vec2 const &source, DgP
   pOut->Clear();
   m_rays.clear();
 
-  std::fill_n(m_pProcessedFlags, m_regionVerts.size(), false);
+  std::fill(m_processedFlags.begin(), m_processedFlags.end(), false);
 
   for (VertexID vertIndex = 0; vertIndex < m_regionVerts.size(); vertIndex++)
   {
-    if (m_pProcessedFlags[vertIndex])
+    if (m_processedFlags[vertIndex])
       continue;
-    m_pProcessedFlags[vertIndex] = true;
+    m_processedFlags[vertIndex] = true;
 
     auto &vert = m_regionVerts[vertIndex];
 
@@ -268,7 +265,7 @@ void VisibilityBuilder::PIMPL::FindAllVertsOnRay(ray2 const &ray, VertexID start
 {
   for (VertexID vertIndex = startVertex; vertIndex < m_regionVerts.size(); vertIndex++)
   {
-    if (m_pProcessedFlags[vertIndex])
+    if (m_processedFlags[vertIndex])
       continue;
 
     auto &vert = m_regionVerts[vertIndex];
@@ -283,7 +280,7 @@ void VisibilityBuilder::PIMPL::FindAllVertsOnRay(ray2 const &ray, VertexID start
     if (d > epsilon)
       continue;
 
-    m_pProcessedFlags[vertIndex] = true;
+    m_processedFlags[vertIndex] = true;
     vec2 v = vert.point - ray.Origin();
     float lenSq = Dg::MagSq(v);
 
