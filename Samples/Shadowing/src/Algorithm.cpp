@@ -33,15 +33,11 @@ public:
   { }
 
   ID(VertexID id0, VertexID id1)
-    : m_id0(s_InvalidID)
-    , m_id1(s_InvalidID)
-  { 
-    if (id0 < id1)
-    {
-      m_id0 = id0;
-      m_id1 = id1;
-    }
-    else
+    : m_id0(id0)
+    , m_id1(id1)
+  {
+    // Standardise the way we store vertex ids for edges; lowest id first.
+    if (id0 > id1)
     {
       m_id0 = id1;
       m_id1 = id0;
@@ -96,7 +92,7 @@ class VisibilityBuilder::PIMPL
   {
     VertexID sourceID; // The ray source will always be a single vertex.
     ID backID;         // The ray can either end at another vertex, or at along an edge.
-    vec2 backPoint;    // If backID is an edge intersect, this will be the intersection point.
+    vec2 backPoint;    // As the back point can be an edge intersect, we also store it here.
   };
 
   struct Vertex
@@ -104,7 +100,6 @@ class VisibilityBuilder::PIMPL
     uint32_t prevPoint;
     uint32_t nextPoint;
     vec2 point;
-    bool processed;
   };
 
 public:
@@ -129,6 +124,7 @@ private:
 
   std::vector<Vertex> m_regionVerts;
   Dg::Map_AVL<float, VisibilityRay> m_rays;
+  bool *m_pProcessedFlags;
   RayVertex *m_pRayVerts;
   uint32_t m_rayVertsSize;
 };
@@ -141,6 +137,7 @@ VertexID const ID::s_InvalidID = 0xFFFFFFFF;
 
 VisibilityBuilder::PIMPL::PIMPL()
   : m_pRayVerts(nullptr)
+  , m_pProcessedFlags(nullptr)
   , m_rayVertsSize(0)
 {
 
@@ -149,6 +146,7 @@ VisibilityBuilder::PIMPL::PIMPL()
 VisibilityBuilder::PIMPL::~PIMPL()
 {
   delete[] m_pRayVerts;
+  delete[] m_pProcessedFlags;
 }
 
 void VisibilityBuilder::PIMPL::SetRegion(PolygonWithHoles const &polygon)
@@ -168,7 +166,6 @@ void VisibilityBuilder::PIMPL::SetRegion(PolygonWithHoles const &polygon)
       v.point = *vert_it;
       v.nextPoint = currentBase + localNextID;
       v.prevPoint = currentBase + localPrevID;
-      v.processed = false;
 
       m_regionVerts.push_back(v);
 
@@ -178,6 +175,9 @@ void VisibilityBuilder::PIMPL::SetRegion(PolygonWithHoles const &polygon)
 
   delete[] m_pRayVerts;
   m_pRayVerts = new RayVertex[m_regionVerts.size()]{};
+
+  delete[] m_pProcessedFlags;
+  m_pProcessedFlags = new bool[m_regionVerts.size()]{};
 }
 
 bool VisibilityBuilder::PIMPL::TryBuildVisibilityPolygon(vec2 const &source, DgPolygon *pOut)
@@ -187,15 +187,15 @@ bool VisibilityBuilder::PIMPL::TryBuildVisibilityPolygon(vec2 const &source, DgP
   pOut->Clear();
   m_rays.clear();
 
-  for (auto &vert : m_regionVerts)
-    vert.processed = false;
+  std::fill_n(m_pProcessedFlags, m_regionVerts.size(), false);
 
   for (VertexID vertIndex = 0; vertIndex < m_regionVerts.size(); vertIndex++)
   {
-    auto &vert = m_regionVerts[vertIndex];
-    if (vert.processed)
+    if (m_pProcessedFlags[vertIndex])
       continue;
-    vert.processed = true;
+    m_pProcessedFlags[vertIndex] = true;
+
+    auto &vert = m_regionVerts[vertIndex];
 
     // Build the source ray
     vec2 v = vert.point - source;
@@ -268,9 +268,10 @@ void VisibilityBuilder::PIMPL::FindAllVertsOnRay(ray2 const &ray, VertexID start
 {
   for (VertexID vertIndex = startVertex; vertIndex < m_regionVerts.size(); vertIndex++)
   {
-    auto &vert = m_regionVerts[vertIndex];
-    if (vert.processed)
+    if (m_pProcessedFlags[vertIndex])
       continue;
+
+    auto &vert = m_regionVerts[vertIndex];
 
     Dg::CP2PointRay<float> query;
     auto result = query(vert.point, ray);
@@ -282,7 +283,7 @@ void VisibilityBuilder::PIMPL::FindAllVertsOnRay(ray2 const &ray, VertexID start
     if (d > epsilon)
       continue;
 
-    vert.processed = true;
+    m_pProcessedFlags[vertIndex] = true;
     vec2 v = vert.point - ray.Origin();
     float lenSq = Dg::MagSq(v);
 
