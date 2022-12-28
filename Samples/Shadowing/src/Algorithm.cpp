@@ -97,8 +97,8 @@ class VisibilityBuilder::PIMPL
 
   struct Vertex
   {
-    uint32_t prevPoint;
-    uint32_t nextPoint;
+    uint32_t prevVertex;
+    uint32_t nextVertex;
     vec2 point;
   };
 
@@ -162,8 +162,8 @@ void VisibilityBuilder::PIMPL::SetRegion(PolygonWithHoles const &polygon)
 
       Vertex v;
       v.point = *vert_it;
-      v.nextPoint = currentBase + localNextID;
-      v.prevPoint = currentBase + localPrevID;
+      v.nextVertex = currentBase + localNextID;
+      v.prevVertex = currentBase + localPrevID;
 
       m_regionVerts.push_back(v);
 
@@ -281,8 +281,7 @@ void VisibilityBuilder::PIMPL::FindAllVertsOnRay(ray2 const &ray, VertexID start
       continue;
 
     m_processedFlags[vertIndex] = true;
-    vec2 v = vert.point - ray.Origin();
-    float lenSq = Dg::MagSq(v);
+    float lenSq = Dg::MagSq(vert.point - ray.Origin());
 
     m_pRayVerts[m_rayVertsSize].id.SetVertex(vertIndex);
     m_pRayVerts[m_rayVertsSize].point = vert.point;
@@ -336,10 +335,10 @@ bool VisibilityBuilder::PIMPL::GetClosestIntersect(ray2 const &ray, vec2 *pPoint
   for (VertexID vertIndex = 0; vertIndex < m_regionVerts.size(); vertIndex++)
   {
     auto &vert = m_regionVerts[vertIndex];
-    if (RayVertsContain(vertIndex) || RayVertsContain(vert.nextPoint))
+    if (RayVertsContain(vertIndex) || RayVertsContain(vert.nextVertex))
       continue;
 
-    vec2 p1 = m_regionVerts.at(vert.nextPoint).point;
+    vec2 p1 = m_regionVerts[vert.nextVertex].point;
     seg s(vert.point, p1);
 
     Dg::FI2SegmentRay<float> query;
@@ -351,7 +350,7 @@ bool VisibilityBuilder::PIMPL::GetClosestIntersect(ray2 const &ray, vec2 *pPoint
     if (result.pointResult.ur < ur)
     {
       ur = result.pointResult.ur;
-      *pEdgeID = ID(vertIndex, vert.nextPoint);
+      *pEdgeID = ID(vertIndex, vert.nextVertex);
       *pPoint = result.pointResult.point;
     }
   }
@@ -366,8 +365,8 @@ VisibilityBuilder::PIMPL::Side VisibilityBuilder::PIMPL::GetSide(ID id, ray2 con
 
   float epsilon = Dg::Constants<float>::EPSILON;
   auto &vert = m_regionVerts[id.GetFirst()];
-  vec2 next = m_regionVerts[vert.nextPoint].point - ray.Origin();
-  vec2 prev = m_regionVerts[vert.prevPoint].point - ray.Origin();
+  vec2 next = m_regionVerts[vert.nextVertex].point - ray.Origin();
+  vec2 prev = m_regionVerts[vert.prevVertex].point - ray.Origin();
 
   float edgeNext = Dg::PerpDot(ray.Direction(), next);
   float edgePrev = Dg::PerpDot(ray.Direction(), prev);
@@ -390,8 +389,8 @@ bool VisibilityBuilder::PIMPL::IsConnected(VertexID id, VisibilityRay const &ray
   //   - ray is a vertex -> edge ray
   //   - ray is a vertex -> vertex ray
 
-  VertexID a = m_regionVerts[ray.sourceID].nextPoint;
-  VertexID b = m_regionVerts[ray.sourceID].prevPoint;
+  VertexID a = m_regionVerts[ray.sourceID].nextVertex;
+  VertexID b = m_regionVerts[ray.sourceID].prevVertex;
   bool connected = false;
 
   connected = connected || a == id;
@@ -407,8 +406,8 @@ bool VisibilityBuilder::PIMPL::IsConnected(VertexID id, VisibilityRay const &ray
     else
     {
       auto &const vert = m_regionVerts[ray.backID.GetFirst()];
-      a = vert.nextPoint;
-      b = vert.prevPoint;
+      a = vert.nextVertex;
+      b = vert.prevVertex;
     }
     connected = connected || a == id;
     connected = connected || b == id;
