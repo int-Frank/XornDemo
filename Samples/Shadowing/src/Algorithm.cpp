@@ -107,7 +107,7 @@ public:
   PIMPL();
   ~PIMPL();
 
-  void SetRegion(PolygonWithHoles const &polygon);
+  void SetRegion(std::vector<xn::PolygonLoop> const &loops);
   bool TryBuildVisibilityPolygon(vec2 const &source, DgPolygon *pOut);
 
 private:
@@ -147,10 +147,10 @@ VisibilityBuilder::PIMPL::~PIMPL()
   delete[] m_pRayVerts;
 }
 
-void VisibilityBuilder::PIMPL::SetRegion(PolygonWithHoles const &polygon)
+void VisibilityBuilder::PIMPL::SetRegion(std::vector<xn::PolygonLoop> const &loops)
 {
   m_regionVerts.clear();
-  for (auto poly_it = polygon.loops.cbegin(); poly_it != polygon.loops.cend(); poly_it++)
+  for (auto poly_it = loops.cbegin(); poly_it != loops.cend(); poly_it++)
   {
     uint32_t size = (uint32_t)poly_it->Size();
     uint32_t currentBase = (uint32_t)m_regionVerts.size();
@@ -463,9 +463,9 @@ VisibilityBuilder::~VisibilityBuilder()
   delete m_pimpl;
 }
 
-void VisibilityBuilder::SetRegion(xn::PolygonWithHoles const &polygon)
+void VisibilityBuilder::SetRegion(std::vector<xn::PolygonLoop> const &loops)
 {
-  m_pimpl->SetRegion(polygon);
+  m_pimpl->SetRegion(loops);
 }
 
 bool VisibilityBuilder::TryBuildVisibilityPolygon(xn::vec2 const &source, xn::DgPolygon *pOut)

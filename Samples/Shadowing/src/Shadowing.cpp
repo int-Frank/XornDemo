@@ -32,14 +32,14 @@ Shadowing::Shadowing(xn::ModuleInitData *pData)
 
 }
 
-bool Shadowing::SetGeometry(PolygonWithHoles const &polygon)
+bool Shadowing::SetGeometry(std::vector<xn::PolygonLoop> const &loops)
 {
-  m_visibilityBuilder.SetRegion(polygon);
+  m_visibilityBuilder.SetRegion(loops);
   m_visibilityBuilder.TryBuildVisibilityPolygon(m_source, &m_visibleRegion);
   return true;
 }
 
-void Shadowing::_DoFrame(UIContext *pContext)
+void Shadowing::_DoFrame(UIContext *pContext, xn::IScene *pScene)
 {
   if (pContext->Button("What is this?##Shadowing"))
     pContext->OpenPopup("Description##Shadowing");
@@ -61,6 +61,8 @@ void Shadowing::_DoFrame(UIContext *pContext)
     m_visibilityBuilder.TryBuildVisibilityPolygon(m_source, &m_visibleRegion);
   if (pContext->InputFloat("y##Shadowing", &m_source.y(), stepSize, stepSize))
     m_visibilityBuilder.TryBuildVisibilityPolygon(m_source, &m_visibleRegion);
+
+  pScene->AddPolygon(m_visibleRegion, 3, 0xFFC51BC6, 0, 0, xn::mat33());
 }
 
 void Shadowing::MouseDown(MouseInput button, vec2 const &p)
@@ -85,33 +87,5 @@ void Shadowing::MouseMove(vec2 const &p)
   {
     m_source = p;
     m_visibilityBuilder.TryBuildVisibilityPolygon(m_source, &m_visibleRegion);
-  }
-}
-
-void Shadowing::Render(Renderer *pRenderer, mat33 const &T_World_View)
-{
-  vec3 source3(m_source.x(), m_source.y(), 1.f);
-  source3 = source3 * T_World_View;
-  vec2 source(source3.x(), source3.y());
-
-  xn::Colour clrSource(0xFFFFFFFF);
-  xn::Colour clrPolygon(0xFFC51BC6);
-  xn::Draw::Fill fillSource(clrSource);
-  xn::Draw::Stroke strokeShadow(clrPolygon, 3.f);
-
-  pRenderer->DrawFilledNGon(source, 32, 5.f, fillSource);
-
-  for (auto it = m_visibleRegion.cEdgesBegin(); it != m_visibleRegion.cEdgesEnd(); it++)
-  {
-    seg s = it.ToSegment();
-
-    vec3 p0(s.GetP0().x(), s.GetP0().y(), 1.f);
-    vec3 p1(s.GetP1().x(), s.GetP1().y(), 1.f);
-    p0 = p0 * T_World_View;
-    p1 = p1 * T_World_View;
-    pRenderer->DrawLine(seg(vec2(p0.x(), p0.y()), vec2(p1.x(), p1.y())), strokeShadow);
-    
-    if (m_showVertices)
-      pRenderer->DrawFilledNGon(p0, 32, 5.f, fillSource);
   }
 }

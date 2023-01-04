@@ -5,15 +5,9 @@
 
 #include "xnModule.h"
 #include "xnCommon.h"
-#include "xnRenderer.h"
-#include "xnDraw.h"
+#include "xnIScene.h"
 #include "DgSet_AVL.h"
 #include "xnModuleInitData.h"
-
-namespace xn
-{
-  class Renderer;
-};
 
 class Triangulation : public xn::Module
 {
@@ -21,14 +15,13 @@ public:
 
   Triangulation(xn::ModuleInitData *pData);
 
-  void Render(xn::Renderer *pRenderer, xn::mat33 const &T_World_View) override;
   void Clear();
 
-  bool SetGeometry(xn::PolygonWithHoles const &) override;
+  bool SetGeometry(std::vector<xn::PolygonLoop> const &) override;
 
 private:
 
-  void _DoFrame(xn::UIContext *) override;
+  void _DoFrame(xn::UIContext *, xn::IScene *pScene) override;
   bool Update();
 
   class UniqueEdge
@@ -56,7 +49,7 @@ private:
   float m_shapeCriteria;
   int m_LloydIterations;
 
-  xn::Draw::Stroke m_edgeProperties;
+  //xn::Draw::Stroke m_edgeProperties;
 };
 
 #endif

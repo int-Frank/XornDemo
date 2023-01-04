@@ -66,7 +66,7 @@ StraightSkeleton::StraightSkeleton(xn::ModuleInitData *pData)
   , m_edgeCount(0)
   , m_faceCount(0)
   , m_showBoundaryConnections(false)
-  , m_edgeProperties(0xFFFF00FF, 2.f)
+  //, m_edgeProperties(0xFFFF00FF, 2.f)
 {
 
 }
@@ -80,9 +80,16 @@ void StraightSkeleton::Clear()
   m_faceCount = 0;
 }
 
-bool StraightSkeleton::SetGeometry(PolygonWithHoles const &polygon)
+bool StraightSkeleton::SetGeometry(std::vector<xn::PolygonLoop> const &loops)
 {
   Clear();
+
+  auto polygons = xn::BuildPolygonsWithHoles(loops);
+
+  xn::PolygonWithHoles polygon;
+  if (!polygons.empty())
+    polygon = polygons.front();
+
   if (polygon.loops.size() == 0)
     return true;
 
@@ -162,7 +169,7 @@ bool StraightSkeleton::SetGeometry(PolygonWithHoles const &polygon)
   return true;
 }
 
-void StraightSkeleton::_DoFrame(UIContext *pContext)
+void StraightSkeleton::_DoFrame(UIContext *pContext, xn::IScene *pScene)
 {
   if (pContext->Button("What is this?##StraightSkeleton"))
     pContext->OpenPopup("Description##StraightSkeleton");
@@ -178,35 +185,8 @@ void StraightSkeleton::_DoFrame(UIContext *pContext)
   pContext->Text("Edges: %u", m_edgeCount);
   pContext->Text("Faces: %u", m_faceCount);
   pContext->Checkbox("Show boundary connections##StraightSkeleton", &m_showBoundaryConnections);
-}
 
-static std::vector<xn::seg> GetTransformed(std::vector<xn::seg> segments, mat33 const &t)
-{
-  std::vector<xn::seg> transformed;
-  for (seg const &s : segments)
-  {
-    vec3 p0(s.GetP0().x(), s.GetP0().y(), 1.f);
-    vec3 p1(s.GetP1().x(), s.GetP1().y(), 1.f);
-    p0 = p0 * t;
-    p1 = p1 * t;
-    transformed.push_back(seg(vec2(p0.x(), p0.y()), vec2(p1.x(), p1.y())));
-  }
-  return transformed;
-}
-
-void StraightSkeleton::Render(Renderer *pRenderer, mat33 const &T_World_View)
-{
-  std::vector<xn::seg> transformed = GetTransformed(m_segments, T_World_View);
-
-  for (auto const &edge : transformed)
-    pRenderer->DrawLine(edge, m_edgeProperties);
-
+  pScene->AddLineGroup(m_segments, 2, 0xFFFFFF00, 0, 0, xn::mat33());
   if (m_showBoundaryConnections)
-  {
-    transformed.clear();
-    std::vector<xn::seg> transformed = GetTransformed(m_boundaryConnections, T_World_View);
-
-    for (auto const &edge : transformed)
-      pRenderer->DrawLine(edge, m_edgeProperties);
-  }
+    pScene->AddLineGroup(m_boundaryConnections, 2, 0xFFFFFF00, 0, 0, xn::mat33());
 }

@@ -10,7 +10,7 @@ public:
   VisibilityBuilder();
   ~VisibilityBuilder();
 
-  void SetRegion(xn::PolygonWithHoles const &polygon);
+  void SetRegion(std::vector<xn::PolygonLoop> const &loops);
   bool TryBuildVisibilityPolygon(xn::vec2 const &source, xn::DgPolygon *pOut);
 
 private:

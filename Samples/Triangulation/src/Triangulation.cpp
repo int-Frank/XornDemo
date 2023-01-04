@@ -120,7 +120,7 @@ Triangulation::Triangulation(xn::ModuleInitData *pData)
   , m_sizeCriteria(1.f)
   , m_shapeCriteria(0.125f)
   , m_LloydIterations(0)
-  , m_edgeProperties(0xFFFF00FF, 1.f)
+//  , m_edgeProperties(0xFFFF00FF, 1.f)
 {
 
 }
@@ -160,9 +160,14 @@ void Triangulation::SetValueBounds()
     m_sizeCriteria = (m_sizeCriteriaBounds.x() + m_sizeCriteriaBounds.y()) / 2.f;
 }
 
-bool Triangulation::SetGeometry(PolygonWithHoles const &polygon)
+bool Triangulation::SetGeometry(std::vector<xn::PolygonLoop> const &loops)
 {
-  m_polygon = polygon;
+  auto polygons = xn::BuildPolygonsWithHoles(loops);
+
+  if (polygons.empty())
+    m_polygon.loops.clear();
+  else
+    m_polygon = polygons.front();
   return Update();
 }
 
@@ -221,7 +226,7 @@ bool Triangulation::Update()
   return true;
 }
 
-void Triangulation::_DoFrame(UIContext *pContext)
+void Triangulation::_DoFrame(UIContext *pContext, xn::IScene *pScene)
 {
   if (pContext->Button("What is this?##Triangulation"))
     pContext->OpenPopup("Description##Triangulation");
@@ -244,16 +249,14 @@ void Triangulation::_DoFrame(UIContext *pContext)
 
   if (pContext->SliderInt("Lloyd iterations", &m_LloydIterations, 0, 50))
     Update();
-}
 
-void Triangulation::Render(Renderer *pRenderer, mat33 const &T_World_View)
-{
+  std::vector<xn::seg> lines;
   for (auto it = m_edgeSet.cbegin_rand(); it != m_edgeSet.cend_rand(); it++)
   {
     vec3 p0(it->p0.x(), it->p0.y(), 1.f);
     vec3 p1(it->p1.x(), it->p1.y(), 1.f);
-    p0 = p0 * T_World_View;
-    p1 = p1 * T_World_View;
-    pRenderer->DrawLine(seg(vec2(p0.x(), p0.y()), vec2(p1.x(), p1.y())), m_edgeProperties);
+    lines.push_back(seg(p0, p1));
   }
+
+  pScene->AddLineGroup(lines, 1.f, xn::Colour(0xFFFF00FF), 0, 0, xn::mat33());
 }
