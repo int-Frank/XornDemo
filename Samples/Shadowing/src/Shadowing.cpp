@@ -62,7 +62,8 @@ void Shadowing::_DoFrame(UIContext *pContext, xn::IScene *pScene)
   if (pContext->InputFloat("y##Shadowing", &m_source.y(), stepSize, stepSize))
     m_visibilityBuilder.TryBuildVisibilityPolygon(m_source, &m_visibleRegion);
 
-  pScene->AddPolygon(m_visibleRegion, 3, 0xFFC51BC6, 0, 0);
+  pScene->AddPolygon(m_visibleRegion, 3.f, 0xFFC51BC6, 0, 0);
+  pScene->AddFilledCircle(m_source, 7.f, 0xFFFFFFFF, 0, 1);
 }
 
 void Shadowing::MouseDown(MouseInput button, vec2 const &p)
