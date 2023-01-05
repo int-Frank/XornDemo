@@ -258,5 +258,5 @@ void Triangulation::_DoFrame(UIContext *pContext, xn::IScene *pScene)
     lines.push_back(seg(p0, p1));
   }
 
-  pScene->AddLineGroup(lines, 1.f, xn::Colour(0xFFFF00FF), 0, 0, xn::mat33());
+  pScene->AddLineGroup(lines, 1.f, xn::Colour(0xFFFF00FF), 0, 0);
 }

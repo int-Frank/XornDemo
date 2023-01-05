@@ -186,7 +186,7 @@ void StraightSkeleton::_DoFrame(UIContext *pContext, xn::IScene *pScene)
   pContext->Text("Faces: %u", m_faceCount);
   pContext->Checkbox("Show boundary connections##StraightSkeleton", &m_showBoundaryConnections);
 
-  pScene->AddLineGroup(m_segments, 2, 0xFFFFFF00, 0, 0, xn::mat33());
+  pScene->AddLineGroup(m_segments, 2, 0xFFFFFF00, 0, 0);
   if (m_showBoundaryConnections)
-    pScene->AddLineGroup(m_boundaryConnections, 2, 0xFFFFFF00, 0, 0, xn::mat33());
+    pScene->AddLineGroup(m_boundaryConnections, 2, 0xFFFFFF00, 0, 0);
 }
