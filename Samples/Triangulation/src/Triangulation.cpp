@@ -223,10 +223,18 @@ bool Triangulation::Update()
     }
   }
 
+  m_edges.clear();
+  for (auto it = m_edgeSet.cbegin_rand(); it != m_edgeSet.cend_rand(); it++)
+  {
+    vec3 p0(it->p0.x(), it->p0.y(), 1.f);
+    vec3 p1(it->p1.x(), it->p1.y(), 1.f);
+    m_edges.push_back(seg(p0, p1));
+  }
+
   return true;
 }
 
-void Triangulation::_DoFrame(UIContext *pContext, xn::IScene *pScene)
+void Triangulation::_DoFrame(UIContext *pContext)
 {
   if (pContext->Button("What is this?##Triangulation"))
     pContext->OpenPopup("Description##Triangulation");
@@ -249,14 +257,9 @@ void Triangulation::_DoFrame(UIContext *pContext, xn::IScene *pScene)
 
   if (pContext->SliderInt("Lloyd iterations", &m_LloydIterations, 0, 50))
     Update();
+}
 
-  std::vector<xn::seg> lines;
-  for (auto it = m_edgeSet.cbegin_rand(); it != m_edgeSet.cend_rand(); it++)
-  {
-    vec3 p0(it->p0.x(), it->p0.y(), 1.f);
-    vec3 p1(it->p1.x(), it->p1.y(), 1.f);
-    lines.push_back(seg(p0, p1));
-  }
-
-  pScene->AddLineGroup(lines, 1.f, xn::Colour(0xFFFF00FF), 0, 0);
+void Triangulation::Render(IRenderer *pRenderer)
+{
+  pRenderer->DrawLineGroup(m_edges, 1.f, xn::Colour(0xFFFF00FF), 0);
 }

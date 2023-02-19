@@ -4,14 +4,13 @@
 #include "Shadowing.h"
 #include "xnPluginAPI.h"
 #include "xnVersion.h"
-#include "xnLogger.h"
 
 using namespace xn;
 
 DEFINE_STANDARD_EXPORTS
 DEFINE_DLLMAIN
 
-Module *xnPlugin_CreateModule(xn::ModuleInitData *pData)
+Module *xnPlugin_CreateModule(ModuleInitData *pData)
 {
   return new Shadowing(pData);
 }
@@ -21,7 +20,7 @@ char const *xnPlugin_GetModuleName()
   return "Shadowing";
 }
 
-Shadowing::Shadowing(xn::ModuleInitData *pData)
+Shadowing::Shadowing(ModuleInitData *pData)
   : Module(pData)
   , m_visibilityBuilder()
   , m_visibleRegion()
@@ -32,14 +31,14 @@ Shadowing::Shadowing(xn::ModuleInitData *pData)
 
 }
 
-bool Shadowing::SetGeometry(std::vector<xn::PolygonLoop> const &loops)
+bool Shadowing::SetGeometry(std::vector<PolygonLoop> const &loops)
 {
   m_visibilityBuilder.SetRegion(loops);
   m_visibilityBuilder.TryBuildVisibilityPolygon(m_source, &m_visibleRegion);
   return true;
 }
 
-void Shadowing::_DoFrame(UIContext *pContext, xn::IScene *pScene)
+void Shadowing::_DoFrame(UIContext *pContext)
 {
   if (pContext->Button("What is this?##Shadowing"))
     pContext->OpenPopup("Description##Shadowing");
@@ -62,27 +61,27 @@ void Shadowing::_DoFrame(UIContext *pContext, xn::IScene *pScene)
   if (pContext->InputFloat("y##Shadowing", &m_source.y(), stepSize, stepSize))
     m_visibilityBuilder.TryBuildVisibilityPolygon(m_source, &m_visibleRegion);
 
-  pScene->AddFilledPolygon(m_visibleRegion, 0xFFCCCCCC, 0, 0);
-  pScene->AddFilledCircle(m_source, 10.f, 0xFFFF00FF, 0, 1);
 }
 
-void Shadowing::MouseDown(MouseInput button, vec2 const &p)
+void Shadowing::Render(IRenderer *pRenderer)
 {
-  if (button == MouseInput::LeftButton)
-  {
-    m_source = p;
-    m_mouseDown = true;
-    m_visibilityBuilder.TryBuildVisibilityPolygon(m_source, &m_visibleRegion);
-  }
+  pRenderer->DrawFilledPolygon(m_visibleRegion, 0xFFCCCCCC, 0);
+  pRenderer->DrawFilledCircle(m_source, 10.f, 0xFFFF00FF, 0);
 }
 
-void Shadowing::MouseUp(MouseInput button)
+void Shadowing::MouseDown(uint32_t modState, vec2 const &p)
 {
-  if (button == MouseInput::LeftButton)
-    m_mouseDown = false;
+  m_source = p;
+  m_mouseDown = true;
+  m_visibilityBuilder.TryBuildVisibilityPolygon(m_source, &m_visibleRegion);
 }
 
-void Shadowing::MouseMove(vec2 const &p)
+void Shadowing::MouseUp(uint32_t modState)
+{
+  m_mouseDown = false;
+}
+
+void Shadowing::MouseMove(uint32_t modState, vec2 const &p)
 {
   if (m_mouseDown)
   {

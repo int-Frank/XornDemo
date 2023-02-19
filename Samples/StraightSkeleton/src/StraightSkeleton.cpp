@@ -9,7 +9,6 @@
 #include "StraightSkeleton.h"
 #include "xnPluginAPI.h"
 #include "xnVersion.h"
-#include "xnLogger.h"
 #include <DgQuery.h>
 #include <DgQuerySegmentSegment.h>
 
@@ -49,7 +48,7 @@ Dg::QueryCode IntersectsBoundary(DgPolygon const &poly, seg const &s)
   return result;
 }
 
-Module *xnPlugin_CreateModule(xn::ModuleInitData *pData)
+Module *xnPlugin_CreateModule(ModuleInitData *pData)
 {
   return new StraightSkeleton(pData);
 }
@@ -59,7 +58,7 @@ char const *xnPlugin_GetModuleName()
   return "Straight Skeleton";
 }
 
-StraightSkeleton::StraightSkeleton(xn::ModuleInitData *pData)
+StraightSkeleton::StraightSkeleton(ModuleInitData *pData)
   : Module(pData)
   , m_segments()
   , m_vertCount(0)
@@ -80,13 +79,13 @@ void StraightSkeleton::Clear()
   m_faceCount = 0;
 }
 
-bool StraightSkeleton::SetGeometry(std::vector<xn::PolygonLoop> const &loops)
+bool StraightSkeleton::SetGeometry(std::vector<PolygonLoop> const &loops)
 {
   Clear();
 
-  auto polygons = xn::BuildPolygonsWithHoles(loops);
+  auto polygons = BuildPolygonsWithHoles(loops);
 
-  xn::PolygonWithHoles polygon;
+  PolygonWithHoles polygon;
   if (!polygons.empty())
     polygon = polygons.front();
 
@@ -169,7 +168,7 @@ bool StraightSkeleton::SetGeometry(std::vector<xn::PolygonLoop> const &loops)
   return true;
 }
 
-void StraightSkeleton::_DoFrame(UIContext *pContext, xn::IScene *pScene)
+void StraightSkeleton::_DoFrame(UIContext *pContext)
 {
   if (pContext->Button("What is this?##StraightSkeleton"))
     pContext->OpenPopup("Description##StraightSkeleton");
@@ -185,8 +184,11 @@ void StraightSkeleton::_DoFrame(UIContext *pContext, xn::IScene *pScene)
   pContext->Text("Edges: %u", m_edgeCount);
   pContext->Text("Faces: %u", m_faceCount);
   pContext->Checkbox("Show boundary connections##StraightSkeleton", &m_showBoundaryConnections);
+}
 
-  pScene->AddLineGroup(m_segments, 2, 0xFFFFFF00, 0, 0);
+void StraightSkeleton::Render(IRenderer *pRenderer)
+{
+  pRenderer->DrawLineGroup(m_segments, 2, 0xFFFFFF00, 0);
   if (m_showBoundaryConnections)
-    pScene->AddLineGroup(m_boundaryConnections, 2, 0xFFFFFF00, 0, 0);
+    pRenderer->DrawLineGroup(m_boundaryConnections, 2, 0xFFFFFF00, 0);
 }

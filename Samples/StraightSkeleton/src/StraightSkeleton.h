@@ -6,14 +6,9 @@
 #include "xnModule.h"
 #include "xnCommon.h"
 #include "xnGeometry.h"
-#include "xnIScene.h"
 #include "xnModuleInitData.h"
-
-namespace xn
-{
-  class Logger;
-  class Renderer;
-};
+#include "xnIRenderer.h"
+#include "xnLogger.h"
 
 class StraightSkeleton : public xn::Module
 {
@@ -23,10 +18,11 @@ public:
 
   void Clear();
   bool SetGeometry(std::vector<xn::PolygonLoop> const &) override;
+  void Render(xn::IRenderer *) override;
 
 private:
 
-  void _DoFrame(xn::UIContext *, xn::IScene *) override;
+  void _DoFrame(xn::UIContext *) override;
 
   std::vector<xn::seg> m_segments;
   std::vector<xn::seg> m_boundaryConnections;

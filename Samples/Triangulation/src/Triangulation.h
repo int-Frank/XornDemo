@@ -5,7 +5,7 @@
 
 #include "xnModule.h"
 #include "xnCommon.h"
-#include "xnIScene.h"
+#include "xnIRenderer.h"
 #include "DgSet_AVL.h"
 #include "xnModuleInitData.h"
 
@@ -18,10 +18,11 @@ public:
   void Clear();
 
   bool SetGeometry(std::vector<xn::PolygonLoop> const &) override;
+  void Render(xn::IRenderer *) override;
 
 private:
 
-  void _DoFrame(xn::UIContext *, xn::IScene *pScene) override;
+  void _DoFrame(xn::UIContext *) override;
   bool Update();
 
   class UniqueEdge
@@ -41,6 +42,7 @@ private:
 
   xn::PolygonWithHoles m_polygon;
   Dg::Set_AVL<UniqueEdge> m_edgeSet;
+  std::vector<xn::seg> m_edges;
   size_t m_vertCount;
   size_t m_faceCount;
 
