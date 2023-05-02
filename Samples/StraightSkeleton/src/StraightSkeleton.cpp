@@ -188,7 +188,7 @@ void StraightSkeleton::_DoFrame(UIContext *pContext)
 
 void StraightSkeleton::Render(IRenderer *pRenderer)
 {
-  pRenderer->DrawLineGroup(m_segments, 2, 0xFFFFFF00, 0);
+  pRenderer->DrawLineGroup(m_segments.data(), m_segments.size(), 2, 0xFFFFFF00, 0);
   if (m_showBoundaryConnections)
-    pRenderer->DrawLineGroup(m_boundaryConnections, 2, 0xFFFFFF00, 0);
+    pRenderer->DrawLineGroup(m_boundaryConnections.data(), m_boundaryConnections.size(), 2, 0xFFFFFF00, 0);
 }

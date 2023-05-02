@@ -261,5 +261,5 @@ void Triangulation::_DoFrame(UIContext *pContext)
 
 void Triangulation::Render(IRenderer *pRenderer)
 {
-  pRenderer->DrawLineGroup(m_edges, 1.f, xn::Colour(0xFFFF00FF), 0);
+  pRenderer->DrawLineGroup(m_edges.data(), (uint32_t)m_edges.size(), 1.f, xn::Colour(0xFFFF00FF), 0);
 }

@@ -75,7 +75,21 @@ static void DrawGraph(Graph const &graph, xn::IRenderer *pRenderer)
 
       lines.push_back(xn::seg(p0, p1));
     }
-    pRenderer->DrawLineGroup(lines, thickness, clrGen.NextColour(), 0);
+    pRenderer->DrawLineGroup(lines.data(), lines.size(), thickness, clrGen.NextColour(), 0);
+  }
+
+  for (auto it_node = graph.nodes.cbegin(); it_node != graph.nodes.cend(); it_node++)
+  {
+    xn::vec2 p0 = it_node->vertex;
+    std::vector<xn::seg> lines;
+    for (auto it_neighbour = it_node->neighbours.cbegin(); it_neighbour != it_node->neighbours.cend(); it_neighbour++)
+    {
+      xn::vec2 p1 = graph.nodes[it_neighbour->id].vertex;
+      p1 = (p0 + p1) * 0.5f;
+
+      lines.push_back(xn::seg(p0, p1));
+    }
+    pRenderer->DrawLineGroup(lines.data(), lines.size(), thickness, clrGen.NextColour(), 0);
   }
 }
 
