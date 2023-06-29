@@ -12,10 +12,23 @@
 #include "DgQueryPolygonPolygon.h"
 
 typedef Dg::impl_FI2PolygonPolygon::Graph<float> Graph;
+typedef Dg::FI2PolygonPolygon<float>             Query;
+typedef Dg::FI2PolygonPolygon<float>::Result     Result;
+
+struct PolygonResult
+{
+  xn::DgPolygon boundary;
+  Dg::DynamicArray<xn::DgPolygon> polyA;
+  Dg::DynamicArray<xn::DgPolygon> polyB;
+  Dg::DynamicArray<xn::DgPolygon> intersection;
+  Dg::DynamicArray<xn::DgPolygon> holes;
+};
 
 struct IntersectPair
 {
   Graph graph;
+  Result result;
+  PolygonResult polygons;
 };
 
 class FIPolyPoly : public xn::Module
@@ -37,6 +50,8 @@ private:
 
   Dg::DynamicArray<IntersectPair> m_intersects;
 
+  bool m_showGraph;
+  bool m_showSubPolygons;
 };
 
 #endif
