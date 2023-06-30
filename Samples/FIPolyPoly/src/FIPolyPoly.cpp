@@ -154,14 +154,6 @@ void FIPolyPoly::Render(xn::IRenderer *pRenderer)
 
 bool FIPolyPoly::SetGeometry(std::vector<xn::PolygonLoop> const &loops)
 {
-  /*for (auto const &loop : loops)
-  {
-    M_LOG_DEBUG("Loop");
-    for (auto it = loop.cPointsBegin(); it != loop.cPointsEnd(); it++)
-      M_LOG_DEBUG("%f, %f", it->x(), it->y());
-    M_LOG_DEBUG("\n");
-  }*/
-
   m_intersects.clear();
 
   for (size_t i = 0; i < loops.size(); i++)
@@ -190,6 +182,8 @@ bool FIPolyPoly::SetGeometry(std::vector<xn::PolygonLoop> const &loops)
 
       if (code != Dg::QueryCode::Intersecting)
         continue;
+
+      M_LOG_DEBUG("Intersect pair: %i, %i", i, j);
 
       IntersectPair intersect;
       intersect.graph = graph;
