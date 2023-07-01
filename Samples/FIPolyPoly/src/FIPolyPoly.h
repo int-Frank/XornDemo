@@ -9,11 +9,12 @@
 #include "xnModuleInitData.h"
 #include "xnIRenderer.h"
 
+#include "DgGraph.h"
 #include "DgQueryPolygonPolygon.h"
 
-typedef Dg::impl_FI2PolygonPolygon::Graph<float> Graph;
-typedef Dg::FI2PolygonPolygon<float>             Query;
-typedef Dg::FI2PolygonPolygon<float>::Result     Result;
+typedef Dg::Graph::Graph_t<float>             Graph;
+typedef Dg::FI2PolygonPolygon<float>          Query;
+typedef Dg::FI2PolygonPolygon<float>::Result  Result;
 
 struct PolygonResult
 {

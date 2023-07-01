@@ -15,8 +15,8 @@ DEFINE_STANDARD_EXPORTS
 DEFINE_DLLMAIN
 
 typedef Dg::impl_FI2PolygonPolygon::PolygonsToGraph<float> PolysToGraph;
-typedef Dg::impl_FI2PolygonPolygon::GraphBuilder<float> GraphBuilder;
-typedef Dg::impl_FI2PolygonPolygon::Node<float> Node;
+typedef Dg::Graph::GraphBuilder<float> GraphBuilder;
+typedef Dg::Graph::Node<float> Node;
 
 Module *xnPlugin_CreateModule(ModuleInitData *pData)
 {
@@ -183,7 +183,7 @@ bool FIPolyPoly::SetGeometry(std::vector<xn::PolygonLoop> const &loops)
       if (code != Dg::QueryCode::Intersecting)
         continue;
 
-      M_LOG_DEBUG("Intersect pair: %i, %i", i, j);
+      //M_LOG_DEBUG("Intersect pair: %i, %i", i, j);
 
       IntersectPair intersect;
       intersect.graph = graph;
